@@ -1,0 +1,23 @@
+# Django .gitignore
+*.py[cod]
+__pycache__/
+.env
+db.sqlite3
+/staticfiles/
+/media/
+viva_env/
+env/
+venv/
+.vscode/
+.idea/
+*.log
+.qoder/
+ERROR_FIX_REPORT.txt
+check_error.txt
+migrants_log.txt
+extract_billing.py
+list_users.py
+truncate_dashboard.py
+verify_setup.py
+setup_admin.py
+pyrightconfig.json

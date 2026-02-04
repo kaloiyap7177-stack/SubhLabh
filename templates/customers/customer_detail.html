@@ -1,0 +1,236 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}{{ customer.name }} - Customer Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Customer Header -->
+<div class="customer-header">
+    <div class="customer-info">
+        <div class="customer-avatar">👤</div>
+        <div>
+            <h1>{{ customer.name }}</h1>
+            <p class="phone">📞 {{ customer.phone }}</p>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button onclick="showWhatsAppModal()" class="btn-whatsapp">💬 Send WhatsApp Message</button>
+        <a href="{% url 'customers:customer-edit' customer.id %}" class="btn-edit">✏️ Edit</a>
+        <a href="{% url 'customers:customer-list' %}" class="btn-back">← Back</a>
+    </div>
+</div>
+
+<!-- Hidden Data Store for WhatsApp -->
+<div id="whatsapp-data-store" style="display: none;" data-customer-name="{{ customer.name }}"
+    data-customer-phone="{{ customer.phone }}" data-customer-udhar="{{ customer.udhar_amount }}"
+    data-customer-purchased="{{ customer.total_purchased }}" data-total-paid="{{ total_paid }}"
+    data-payment-status="{{ payment_status }}" data-shop-name="{{ shop_name }}" data-shop-phone="{{ shop_phone }}"
+    data-shop-address="{{ shop_address }}">
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="stat-icon udhar">💳</div>
+        <div class="stat-details">
+            <p class="stat-label">Total Udhar</p>
+            <h2 class="stat-value">₹{{ customer.udhar_amount|floatformat:2 }}</h2>
+        </div>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-icon purchases">🛍️</div>
+        <div class="stat-details">
+            <p class="stat-label">Total Purchases</p>
+            <h2 class="stat-value">₹{{ customer.total_purchased|floatformat:2 }}</h2>
+        </div>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-icon visits">📅</div>
+        <div class="stat-details">
+            <p class="stat-label">Total Visits</p>
+            <h2 class="stat-value">{{ customer.total_visits }}</h2>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="content-grid">
+    <!-- Purchase History -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3>📝 Purchase History</h3>
+        </div>
+        <div class="section-content">
+            {% if purchases %}
+            <div class="purchase-list">
+                {% for sale in purchases %}
+                <div class="purchase-item">
+                    <div class="purchase-info">
+                        <div class="purchase-date">
+                            📅 {{ sale.sale_date|date:"M d, Y" }} at {{ sale.sale_date|time:"H:i" }}
+                        </div>
+                        <div class="purchase-products">
+                            {% for item in sale.items.all %}
+                            <span class="product-tag">{{ item.product.name }} x{{ item.quantity }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="purchase-amount">
+                        <div class="amount">₹{{ sale.total_amount|floatformat:2 }}</div>
+                        <div class="payment-info">
+                            <span class="payment-badge {{ sale.payment_method }}">{{ sale.get_payment_method_display }}
+                            </span>
+                            {% if sale.is_paid %}
+                            <span class="status-badge paid">Paid</span>
+                            {% else %}
+                            <span class="status-badge udhar">Udhar</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-message">
+                <p>📊 No purchase history yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Udhar Management -->
+    <div class="sidebar-section">
+        <!-- Udhar Summary -->
+        <div class="section-card udhar-card">
+            <div class="section-header">
+                <h3>💵 Udhar Summary</h3>
+            </div>
+            <div class="section-content">
+                <div class="udhar-summary">
+                    <div class="summary-row">
+                        <span>Outstanding:</span>
+                        <strong class="amount-red">₹{{ customer.udhar_amount|floatformat:2 }}</strong>
+                    </div>
+                </div>
+
+                {% if customer.udhar_amount > 0 %}
+                <button onclick="showPaymentModal()" class="btn-pay-udhar">
+                    💰 Add Payment
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Udhar History -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>📄 Udhar History</h3>
+            </div>
+            <div class="section-content">
+                {% if udhar_transactions %}
+                <div class="udhar-history">
+                    {% for transaction in udhar_transactions %}
+                    <div class="udhar-transaction">
+                        <div class="transaction-date">
+                            {{ transaction.date|date:"M d, Y" }}
+                        </div>
+                        <div class="transaction-detail">
+                            <span
+                                class="{% if transaction.type == 'credit' %}credit-label{% else %}payment-label{% endif %}">
+                                {% if transaction.type == 'credit' %}
+                                🔺 Credit Added
+                                {% else %}
+                                🔻 Payment Received
+                                {% endif %}
+                            </span>
+                            <strong
+                                class="{% if transaction.type == 'credit' %}amount-red{% else %}amount-green{% endif %}">
+                                {% if transaction.type == 'credit' %}+{% else %}-{% endif %}₹{{
+                                transaction.amount|floatformat:2 }}
+                            </strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-message">
+                    <p>No udhar history</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        {% if customer.notes %}
+        <div class="section-card">
+            <div class="section-header">
+                <h3>📝 Notes</h3>
+            </div>
+            <div class="section-content">
+                <p class="notes-text">{{ customer.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>💰 Add Udhar Payment</h3>
+        <form method="POST" action="{% url 'customers:udhar-payment' customer.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Customer: <strong>{{ customer.name }}</strong></label>
+                <label>Outstanding Udhar: <strong class="amount-red">₹{{ customer.udhar_amount|floatformat:2 }}
+                    </strong></label>
+            </div>
+            <div class="form-group">
+                <label for="amount">Payment Amount (₹)</label>
+                <input type="number" id="amount" name="amount" class="form-input" step="0.01"
+                    max="{{ customer.udhar_amount }}" placeholder="Enter amount" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" onclick="closePaymentModal()" class="btn-cancel">Cancel</button>
+                <button type="submit" class="btn-submit">💾 Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- WhatsApp Message Preview Modal -->
+<div id="whatsappModal" class="modal" style="display: none;">
+    <div class="modal-content whatsapp-modal">
+        <span class="close-modal" onclick="closeWhatsAppModal()">&times;</span>
+        <h3>📱 WhatsApp Message Preview</h3>
+        <p class="modal-subtitle">Preview and edit your message before sending</p>
+
+        <div class="message-preview-container">
+            <label>Message Content (Editable):</label>
+            <textarea id="whatsappMessageContent" class="message-preview" rows="12"></textarea>
+
+            <label>Footer (Not Editable):</label>
+            <div class="message-footer-locked">
+                <p>Thank You for Shopping!</p>
+                <p>Computer Generated Bill</p>
+                <p>Powered by SubhLabh - Shop Management Simplified</p>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" onclick="closeWhatsAppModal()" class="btn-cancel">Cancel</button>
+            <button type="button" onclick="sendWhatsAppMessage()" class="btn-whatsapp-send">📱 Send to WhatsApp</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/customer_detail.js' %}"></script>
+{% endblock %}

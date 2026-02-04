@@ -1,0 +1,99 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Confirm Account Deletion - SubhLabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/delete_account_confirm.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="delete-confirm-container">
+    <div class="delete-confirm-card">
+        <div class="confirm-header">
+            <span class="warning-icon">⚠️</span>
+            <h1>Delete Your Account?</h1>
+            <p class="subtitle">Requested by: <strong>{{ user.email }}</strong></p>
+        </div>
+
+        <div class="confirm-body">
+            <div class="info-box danger">
+                <h3>📢 Important: Please read this carefully</h3>
+                <p>We're sorry to see you go. If you delete your account, your data will be permanently removed after a
+                    <strong>30-day grace period</strong>.</p>
+            </div>
+
+            <div class="data-loss-section">
+                <h4>What you'll lose:</h4>
+                <div class="loss-grid">
+                    <div class="loss-item">
+                        <span class="item-icon">📉</span>
+                        <div class="item-text">
+                            <strong>Reports & Analytics</strong>
+                            <p>All sales history and business growth reports.</p>
+                        </div>
+                    </div>
+                    <div class="loss-item">
+                        <span class="item-icon">👥</span>
+                        <div class="item-text">
+                            <strong>Customer Records</strong>
+                            <p>Contact details and all Udhar (Credit) records.</p>
+                        </div>
+                    </div>
+                    <div class="loss-item">
+                        <span class="item-icon">📦</span>
+                        <div class="item-text">
+                            <strong>Inventory Data</strong>
+                            <p>Product list and stock level management.</p>
+                        </div>
+                    </div>
+                    <div class="loss-item">
+                        <span class="item-icon">🖼️</span>
+                        <div class="item-text">
+                            <strong>Shop Branding</strong>
+                            <p>Your shop profile, logo, and photos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box info">
+                <h3>⏳ 30-Day Grace Period</h3>
+                <p>Your account will be scheduled for deletion. If you change your mind, simply <strong>log in</strong>
+                    within 30 days to restore everything instantly.</p>
+            </div>
+
+            <form action="{% url 'customers:request-account-deletion' %}" method="POST" id="deleteForm">
+                {% csrf_token %}
+                <div class="agreement-check">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="confirmCheck" required>
+                        <span class="checkmark"></span>
+                        I understand that my account will be permanently deleted after 30 days.
+                    </label>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="{% url 'customers:settings' %}" class="btn-cancel">Cancel & Go Back</a>
+                    <button type="submit" id="submitBtn" class="btn-delete" disabled>Confirm & Schedule
+                        Deletion</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('confirmCheck').addEventListener('change', function () {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = !this.checked;
+        if (this.checked) {
+            submitBtn.classList.add('active');
+        } else {
+            submitBtn.classList.remove('active');
+        }
+    });
+</script>
+{% endblock %}

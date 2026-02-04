@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #ef4444;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .warning-icon {
+            font-size: 48px;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .content {
+            padding: 0 10px;
+        }
+
+        .date-box {
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .date {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+
+        .action-btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">SubhLabh</div>
+            <span class="warning-icon">⚠️</span>
+            <h2>Account Deletion Scheduled</h2>
+        </div>
+
+        <div class="content">
+            <p>Hello {{ user.first_name }},</p>
+
+            <p>We received a request to delete your SubhLabh account. As per your request, your account has been
+                scheduled for permanent deletion.</p>
+
+            <div class="date-box">
+                <p>Your account data will be permanently deleted on:</p>
+                <p class="date">{{ deletion_date|date:"F d, Y" }}</p>
+            </div>
+
+            <h3>What this means:</h3>
+            <ul>
+                <li>You have a <strong>30-day grace period</strong> starting today.</li>
+                <li>During this time, your data is safe but inactive.</li>
+                <li>After 30 days, all your sales, customers, and product data will be <strong>permanently
+                        wiped</strong> and cannot be recovered.</li>
+            </ul>
+
+            <h3>Changed your mind?</h3>
+            <p>We'd love to have you back! You can cancel this deletion instantly by simply logging into your account.
+            </p>
+
+            <div style="text-align: center;">
+                <a href="{{ login_url }}" class="action-btn">Login to Cancel Deletion</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; {% now "Y" %} SubhLabh. All rights reserved.</p>
+            <p>If you did not request this, please login immediately to secure your account.</p>
+        </div>
+    </div>
+</body>
+
+</html>

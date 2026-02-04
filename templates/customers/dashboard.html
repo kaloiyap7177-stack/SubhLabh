@@ -1,0 +1,263 @@
+{% extends 'customers/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - SubhLabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="welcome-text">
+            <h1>Hello, {{ request.user.first_name }}! 👋</h1>
+            <p>Here's what's happening in {{ profile.shop_name|default:"your shop" }} today.</p>
+        </div>
+        <div class="quick-actions">
+            <a href="{% url 'customers:billing' %}" class="action-btn btn-white">
+                <i class="fas fa-plus"></i> New Sale
+            </a>
+            <a href="{% url 'customers:customer-create' %}" class="action-btn btn-light">
+                <i class="fas fa-user-plus"></i> Add Customer
+            </a>
+        </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+        <!-- Today's Sales -->
+        <div class="metric-card">
+            <div class="metric-icon icon-purple">
+                <i class="fas fa-rupee-sign"></i>
+            </div>
+            <div class="metric-info">
+                <h3>₹{{ today_sales|stringformat:".2f" }}</h3>
+                <p>Today's Sales</p>
+            </div>
+        </div>
+
+        <!-- Monthly Sales -->
+        <div class="metric-card">
+            <div class="metric-icon icon-blue">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="metric-info">
+                <h3>₹{{ monthly_sales|stringformat:".2f" }}</h3>
+                <p>This Month</p>
+            </div>
+        </div>
+
+        <!-- Today's Udhar -->
+        <div class="metric-card">
+            <div class="metric-icon icon-orange">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="metric-info">
+                <h3>₹{{ today_udhar|stringformat:".2f" }}</h3>
+                <p>Today's Udhar</p>
+            </div>
+        </div>
+
+        <!-- Pending Udhar -->
+        <div class="metric-card">
+            <div class="metric-icon icon-orange">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="metric-info">
+                <h3>₹{{ total_udhar|stringformat:".2f" }}</h3>
+                <p>Pending Udhar</p>
+            </div>
+        </div>
+
+        <!-- Total Customers -->
+        <div class="metric-card">
+            <div class="metric-icon icon-green">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="metric-info">
+                <h3>{{ total_customers }}</h3>
+                <p>Total Customers</p>
+            </div>
+        </div>
+
+        <!-- Total Products -->
+        <div class="metric-card">
+            <div class="metric-icon icon-teal">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="metric-info">
+                <h3>{{ total_products }}</h3>
+                <p>Total Products</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Lists (Tabbed Display) -->
+    <div class="dashboard-display-section">
+        <div class="display-tabs-header">
+            <button class="display-tab-btn active" onclick="switchDisplayTab('sales-overview')">
+                <i class="fas fa-chart-line"></i> Sales Overview
+            </button>
+            <button class="display-tab-btn" onclick="switchDisplayTab('low-stock')">
+                <i class="fas fa-exclamation-triangle"></i> Low Stock Alert
+            </button>
+        </div>
+
+        <!-- Sales Overview Pane -->
+        <div id="sales-overview-pane" class="display-tab-pane active">
+            <div class="card-header">
+                <h3 class="card-title">Monthly Revenue Analysis</h3>
+                <div class="header-actions">
+                    <a href="{% url 'customers:reports' %}" class="btn-premium btn-premium-primary">
+                        <i class="fas fa-chart-pie"></i> Detailed Report
+                    </a>
+                </div>
+            </div>
+            <div class="chart-container" style="height: 350px;">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Low Stock Pane -->
+        <div id="low-stock-pane" class="display-tab-pane">
+            <div class="card-header">
+                <h3 class="card-title">Inventory Alerts</h3>
+                <a href="{% url 'customers:product-list' %}" class="btn-premium btn-premium-danger">
+                    <i class="fas fa-boxes"></i> Manage Inventory
+                </a>
+            </div>
+            <div class="low-stock-list">
+                {% if low_stock_products %}
+                <div class="row">
+                    {% for product in low_stock_products %}
+                    <div class="col-md-6">
+                        <div class="low-stock-item">
+                            <div>
+                                <h6 class="mb-0 font-weight-bold">{{ product.name }}</h6>
+                                <small class="text-muted">{{ product.category }}</small>
+                            </div>
+                            <span class="stock-badge">{{ product.stock_quantity }} {{ product.unit }} left</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3" style="font-size: 40px;">✅</div>
+                    <p class="text-muted">All products are well-stocked!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Robust Data Injection -->
+{{ monthly_labels|json_script:"monthly-labels-data" }}
+{{ monthly_data|json_script:"monthly-sales-data" }}
+{{ product_labels|json_script:"product-labels-data" }}
+{{ product_data|json_script:"product-sales-data" }}
+
+<script>
+    // Tab Switching Logic
+    function switchDisplayTab(tabId) {
+        const btn = event.currentTarget;
+        document.querySelectorAll('.display-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.display-tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tabId + '-pane').classList.add('active');
+    }
+
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function () {
+        const parseJSON = (id) => JSON.parse(document.getElementById(id).textContent);
+
+        const labels = parseJSON('monthly-labels-data');
+        const data = parseJSON('monthly-sales-data');
+
+        if (!labels.length || !data.length) {
+            document.getElementById('salesChart').parentElement.innerHTML = '<div class="text-center py-5"><p class="text-muted">No sales data available yet.</p></div>';
+            return;
+        }
+
+        const ctx = document.getElementById('salesChart').getContext('2d');
+
+        // Create Gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(102, 126, 234, 0.9)');
+        gradient.addColorStop(1, 'rgba(118, 75, 162, 0.9)');
+
+        const hoverGradient = ctx.createLinearGradient(0, 0, 0, 400);
+        hoverGradient.addColorStop(0, 'rgba(118, 75, 162, 1)');
+        hoverGradient.addColorStop(1, 'rgba(102, 126, 234, 1)');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: data,
+                    backgroundColor: gradient,
+                    hoverBackgroundColor: hoverGradient,
+                    borderColor: '#764ba2',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 45,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return ' ₹' + context.parsed.y.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: { size: 11, weight: '500' },
+                            color: '#64748b',
+                            callback: function (value) {
+                                if (value >= 1000) return '₹' + (value / 1000) + 'k';
+                                return '₹' + value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11, weight: '600' },
+                            color: '#64748b'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "customers/base.html" %}
+{% load static %}
+{% block title %}Customers - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h1>📋 Customers</h1>
+        <p>Manage your customer database</p>
+    </div>
+    <a href="{% url 'customers:customer-create' %}" class="btn-primary">
+        <span>➕</span> Add Customer
+    </a>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar">
+    <form method="GET" class="search-form">
+        <input type="text" name="search" placeholder="Search by name or phone..." value="{{ search }}"
+            class="search-input">
+        <button type="submit" class="btn-search">🔍 Search</button>
+    </form>
+
+    <form method="GET" class="filter-form">
+        <select name="udhar_filter" class="filter-select" onchange="this.form.submit()">
+            <option value="all" {% if udhar_filter == 'all' %}selected{% endif %}>All Customers</option>
+            <option value="remaining" {% if udhar_filter == 'remaining' %}selected{% endif %}>Has Udhar</option>
+            <option value="cleared" {% if udhar_filter == 'cleared' %}selected{% endif %}>Cleared</option>
+        </select>
+    </form>
+</div>
+
+<!-- Customers Table -->
+<div class="customers-container">
+    {% if customers %}
+    <div class="table-responsive">
+        <table class="customers-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone Number</th>
+                    <th>Total Udhar</th>
+                    <th>Last Purchase</th>
+                    <th class="actions-col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>
+                        <div class="customer-name">
+                            <span class="name-icon">👤</span>
+                            <strong>{{ customer.name }}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="phone-number">📞 {{ customer.phone }}</span>
+                    </td>
+                    <td>
+                        {% if customer.udhar_amount > 0 %}
+                        <span class="udhar-badge has-udhar">₹{{ customer.udhar_amount|floatformat:2 }}</span>
+                        {% else %}
+                        <span class="udhar-badge cleared">₹0.00</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if customer.last_purchase_date %}
+                        <span class="date-text">{{ customer.last_purchase_date|date:"M d, Y" }}</span>
+                        {% else %}
+                        <span class="no-data">No purchases</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions-col">
+                        <div class="action-buttons">
+                            <a href="{% url 'customers:customer-detail' customer.id %}" class="btn-action view"
+                                title="View Details">
+                                👁️
+                            </a>
+                            <a href="{% url 'customers:customer-edit' customer.id %}" class="btn-action edit"
+                                title="Edit">
+                                ✏️
+                            </a>
+                            <button data-id="{{ customer.id }}" data-name="{{ customer.name }}"
+                                onclick="deleteCustomer(this.dataset.id, this.dataset.name)" class="btn-action delete"
+                                title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="?page={{ page|add:-1 }}{% if search %}&search={{ search }}{% endif %}{% if udhar_filter %}&udhar_filter={{ udhar_filter }}{% endif %}"
+            class="page-btn">
+            ← Previous
+        </a>
+        {% endif %}
+
+        <span class="page-info">Page {{ page }} of {{ pages }}</span>
+
+        {% if page < pages %} <a
+            href="?page={{ page|add:1 }}{% if search %}&search={{ search }}{% endif %}{% if udhar_filter %}&udhar_filter={{ udhar_filter }}{% endif %}"
+            class="page-btn">
+            Next →
+            </a>
+            {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No customers found</h3>
+        {% if search %}
+        <p>No results for "{{ search }}"</p>
+        <a href="{% url 'customers:customer-list' %}" class="btn-secondary">Clear Search</a>
+        {% else %}
+        <p>Add your first customer to get started</p>
+        <a href="{% url 'customers:customer-create' %}" class="btn-primary">Add Customer</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Delete Customer?</h3>
+        <p>Are you sure you want to delete <strong id="customerName"></strong>?</p>
+        <p class="warning-text">⚠️ This action cannot be undone. All purchase history will be lost.</p>
+        <form id="deleteForm" method="POST" action="">
+            {% csrf_token %}
+            <div class="modal-actions">
+                <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/customer_list.js' %}"></script>
+{% endblock %}

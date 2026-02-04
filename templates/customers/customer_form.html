@@ -1,0 +1,48 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}{% if customer %}Edit{% else %}Add{% endif %} Customer - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h1>{% if customer %}✏️ Edit Customer{% else %}➕ Add New Customer{% endif %}</h1>
+        <a href="{% url 'customers:customer-list' %}" class="btn-back">← Back to Customers</a>
+    </div>
+
+    <form method="POST" class="customer-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="name" class="form-label">Customer Name *</label>
+            <input type="text" id="name" name="name" class="form-input"
+                value="{% if customer %}{{ customer.name }}{% endif %}" placeholder="Enter customer name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone" class="form-label">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" class="form-input"
+                value="{% if customer %}{{ customer.phone }}{% endif %}" placeholder="Enter phone number"
+                pattern="[0-9]{10}" required>
+            <span class="form-hint">10 digit mobile number</span>
+        </div>
+
+        <div class="form-group">
+            <label for="notes" class="form-label">Notes / Remarks</label>
+            <textarea id="notes" name="notes" class="form-textarea" rows="4"
+                placeholder="Any additional information about the customer">{% if customer %}{{ customer.notes }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'customers:customer-list' %}" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-submit">
+                {% if customer %}💾 Save Changes{% else %}➕ Add Customer{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

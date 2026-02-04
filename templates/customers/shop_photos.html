@@ -1,0 +1,222 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Shop Photos - SubhLabh{% endblock %}
+
+{% block extra_css %}
+<style>
+    .photos-container {
+        padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .photos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .photos-header h1 {
+        font-size: 28px;
+        color: #111827;
+        margin: 0;
+    }
+
+    .upload-btn {
+        background: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .upload-btn:hover {
+        background: #2563eb;
+    }
+
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .photo-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        position: relative;
+        aspect-ratio: 1;
+        transition: transform 0.2s;
+    }
+
+    .photo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .photo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .delete-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .photo-card:hover .delete-btn {
+        opacity: 1;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #e5e7eb;
+        grid-column: 1 / -1;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+        display: block;
+        color: #9ca3af;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .file-input-wrapper {
+        border: 2px dashed #d1d5db;
+        padding: 40px;
+        text-align: center;
+        border-radius: 8px;
+        margin: 20px 0;
+        cursor: pointer;
+    }
+
+    .file-input-wrapper:hover {
+        background: #f9fafb;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="photos-container">
+    <div class="photos-header">
+        <div>
+            <h1>📸 Shop Gallery</h1>
+            <p style="color: #6b7280; margin-top: 5px;">Showcase your shop inside and out</p>
+        </div>
+        <button onclick="openUploadModal()" class="upload-btn">
+            <span>+</span> Add Photo
+        </button>
+    </div>
+
+    <div class="photos-grid">
+        {% for photo in shop_photos %}
+        <div class="photo-card">
+            <img src="{{ photo.image.url }}" alt="Shop Photo" class="photo-img">
+            <form method="POST" action="{% url 'customers:shop_photo_delete' photo.id %}"
+                onsubmit="return confirm('Delete this photo?');">
+                {% csrf_token %}
+                <button type="submit" class="delete-btn" title="Delete Photo">🗑️</button>
+            </form>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <span class="empty-icon">🖼️</span>
+            <h3>No photos yet</h3>
+            <p>Add photos of your shop to build trust with customers.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 20px;">Upload New Photo</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="file" name="shop_photo" id="photoInput" accept="image/*" style="display: none;"
+                    onchange="this.form.submit()" required>
+                <label for="photoInput" class="file-input-wrapper" style="display: block;">
+                    <span style="font-size: 32px; display: block; margin-bottom: 10px;">📤</span>
+                    <strong>Click to Select Photo</strong>
+                    <p style="font-size: 13px; color: #6b7280; margin-top: 5px;">JPG, PNG supported</p>
+                </label>
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="closeUploadModal()"
+                    style="background: none; border: none; color: #6b7280; cursor: pointer; padding: 10px;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openUploadModal() {
+        document.getElementById('uploadModal').style.display = 'flex';
+    }
+
+    function closeUploadModal() {
+        document.getElementById('uploadModal').style.display = 'none';
+    }
+
+    // Close modal on outside click
+    window.onclick = function (event) {
+        var modal = document.getElementById('uploadModal');
+        if (event.target == modal) {
+            closeUploadModal();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Sales History - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/sales_history.css' %}">
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h1>📋 Sales History</h1>
+        <p>View and manage all sales transactions</p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'customers:billing' %}" class="btn-primary">➕ New Sale</a>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="filters-section">
+    <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search by customer or product..."
+            value="{{ search_query }}">
+    </div>
+
+    <div class="filter-controls">
+        <div class="filter-group">
+            <label>📅 Date Range</label>
+            <div class="date-inputs">
+                <input type="date" id="dateFrom" class="filter-input" value="{{ date_from|date:'Y-m-d' }}">
+                <span>to</span>
+                <input type="date" id="dateTo" class="filter-input" value="{{ date_to|date:'Y-m-d' }}">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>💳 Payment Method</label>
+            <select id="paymentFilter" class="filter-select">
+                <option value="">All Methods</option>
+                <option value="cash" {% if payment_method == 'cash' %}selected{% endif %}>Cash</option>
+                <option value="upi" {% if payment_method == 'upi' %}selected{% endif %}>UPI</option>
+                <option value="card" {% if payment_method == 'card' %}selected{% endif %}>Card</option>
+                <option value="udhar" {% if payment_method == 'udhar' %}selected{% endif %}>Udhar/Credit</option>
+            </select>
+        </div>
+
+
+
+        <div class="filter-actions">
+            <button onclick="applyFilters()" class="btn-filter">✅ Apply</button>
+            <button onclick="resetFilters()" class="btn-reset">🔄 Reset</button>
+            <button onclick="downloadSalesData()" class="btn-export">📥 Download Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Table -->
+<div class="sales-section">
+    <div class="section-header">
+        <h3>📊 Sales Records ({{ sales|length }} of {{ total_count }})</h3>
+        <div class="view-toggle">
+            <button class="view-btn active" onclick="setView('table')">📊 Table</button>
+            <button class="view-btn" onclick="setView('cards')">🎴 Cards</button>
+        </div>
+    </div>
+
+    <!-- Table View -->
+    <div id="tableView" class="table-container">
+        {% if sales %}
+        <table class="sales-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Products</th>
+                    <th>Total Amount</th>
+                    <th>Payment</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr class="sale-row">
+                    <td>
+                        <div class="customer-cell">
+                            {% if sale.customer %}
+                            <strong>{{ sale.customer.name }}</strong>
+                            <span class="customer-phone">{{ sale.customer.phone }}</span>
+                            {% else %}
+                            <span class="walk-in">🚶 Walk-in Customer</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="products-summary">
+                            {% for item in sale.items.all|slice:":3" %}
+                            <div class="product-item">
+                                <span class="product-name">{{ item.product.name }}</span>
+                                <span class="product-qty">x{{ item.quantity }}</span>
+                            </div>
+                            {% endfor %}
+                            {% if sale.items.count > 3 %}
+                            <span class="more-items">+{{ sale.items.count|add:"-3" }} more</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <strong class="amount">₹{{ sale.total_amount|floatformat:2 }}</strong>
+                    </td>
+                    <td>
+                        <span class="payment-badge {{ sale.payment_method }}">
+                            {% if sale.payment_method == 'cash' %}💵 Cash
+                            {% elif sale.payment_method == 'upi' %}📱 UPI
+                            {% elif sale.payment_method == 'card' %}💳 Card
+                            {% else %}💳 Udhar
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="date-cell">
+                            <span class="date">{{ sale.sale_date|date:"M d, Y" }}</span>
+                            <span class="time">{{ sale.sale_date|time:"h:i A" }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if sale.is_paid %}
+                        <span class="status-badge paid">✅ Paid</span>
+                        {% else %}
+                        <span class="status-badge pending">⏳ Udhar Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="viewSale({{ sale.id }})" class="btn-action view"
+                                title="View Details">👁️</button>
+                            <button onclick="printBill({{ sale.id }})" class="btn-action print"
+                                title="Print Bill">🖨️</button>
+                            <button onclick="deleteSale({{ sale.id }})" class="btn-action delete"
+                                title="Delete Sale">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">💭</div>
+            <h3>No Sales Found</h3>
+            <p>No sales records match your search criteria.</p>
+            <button onclick="resetFilters()" class="btn-primary">Reset Filters</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Cards View -->
+    <div id="cardsView" class="cards-container" style="display: none;">
+        {% for sale in sales %}
+        <div class="sale-card">
+            <div class="card-header">
+                <span class="payment-badge {{ sale.payment_method }}">
+                    {% if sale.payment_method == 'cash' %}💵 Cash
+                    {% elif sale.payment_method == 'upi' %}📱 UPI
+                    {% elif sale.payment_method == 'card' %}💳 Card
+                    {% else %}💳 Udhar
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="card-customer">
+                {% if sale.customer %}
+                <strong>{{ sale.customer.name }}</strong>
+                <span>{{ sale.customer.phone }}</span>
+                {% else %}
+                <span class="walk-in">🚶 Walk-in Customer</span>
+                {% endif %}
+            </div>
+
+            <div class="card-products">
+                {% for item in sale.items.all %}
+                <div class="product-line">
+                    <span>{{ item.product.name }} x{{ item.quantity }}</span>
+                    <span>₹{{ item.total_amount|floatformat:2 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card-footer">
+                <div class="card-total">
+                    <span>Total:</span>
+                    <strong>₹{{ sale.total_amount|floatformat:2 }}</strong>
+                </div>
+                <div class="card-date">
+                    <span>{{ sale.sale_date|date:"M d, Y" }}</span>
+                    <span>{{ sale.sale_date|time:"h:i A" }}</span>
+                </div>
+            </div>
+
+            <div class="card-actions">
+                <button onclick="viewSale({{ sale.id }})" class="btn-action view">👁️ View</button>
+                <button onclick="printBill({{ sale.id }})" class="btn-action print">🖨️ Print</button>
+                <button onclick="deleteSale({{ sale.id }})" class="btn-action delete">🗑️ Delete</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="pagination">
+    <button onclick="changePage({{ page|add:'-1' }})" class="page-btn" {% if page <= 1 %}disabled{% endif %}>
+        ← Previous
+    </button>
+
+    <div class="page-numbers">
+        {% for p in page_range %}
+        {% if p == page %}
+        <button class="page-btn active">{{ p }}</button>
+        {% elif p == '...' %}
+        <span class="page-dots">...</span>
+        {% else %}
+        <button onclick="changePage({{ p }})" class="page-btn">{{ p }}</button>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <button onclick="changePage({{ page|add:'1' }})" class="page-btn" {% if page >= total_pages %}disabled{% endif %}>
+        Next →
+    </button>
+</div>
+{% endif %}
+
+<!-- Sale Details Modal -->
+<div id="saleDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>📝 Sale Details</h3>
+            <button onclick="closeSaleDetails()" class="close-btn">✕</button>
+        </div>
+        <div id="saleDetailsContent" class="modal-body">
+            <!-- Content loaded via AJAX -->
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚠️ Confirm Delete</h3>
+            <button onclick="closeDeleteModal()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this sale?</p>
+            <p class="warning">⚠️ This action cannot be undone. Stock will be restored and customer records will be
+                updated.</p>
+        </div>
+        <div class="modal-actions">
+            <button onclick="closeDeleteModal()" class="btn-cancel">Cancel</button>
+            <button onclick="confirmDelete()" class="btn-delete">Delete Sale</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set URLs for JavaScript to use
+    const salesHistoryUrl = "{% url 'customers:sales-history' %}";
+    const salesDownloadUrl = "{% url 'customers:sales-download' %}";
+</script>
+<script src="{% static 'js/sales_history.js' %}"></script>
+{% endblock %}

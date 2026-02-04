@@ -1,0 +1,151 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Settings - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="settings-container">
+    <div class="settings-header">
+        <a href="{% url 'customers:profile' %}" class="btn-back">← Back</a>
+        <h1>⚙️ Settings</h1>
+        <p>Manage your account and application preferences</p>
+    </div>
+
+    <!-- App Settings Section -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>🎨 Application Settings</h2>
+            <p class="section-description">Customize your SubhLabh experience</p>
+        </div>
+        <div class="settings-items">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>🌐 Language</h3>
+                    <p>Choose your preferred language</p>
+                </div>
+                <div class="setting-control">
+                    <select class="form-select" disabled>
+                        <option>English (Default)</option>
+                        <option>हिंदी (Coming Soon)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>🔔 Notifications</h3>
+                    <p>Email notifications for important updates</p>
+                </div>
+                <div class="setting-control">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="notificationToggle" {% if profile.email_notifications_enabled %}
+                            checked{% endif %}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Security Section -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>🔒 Account Security</h2>
+            <p class="section-description">Keep your account safe and secure</p>
+        </div>
+        <div class="settings-items">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>🔑 Password</h3>
+                    <p>Change your account password</p>
+                </div>
+                <div class="setting-control">
+                    <a href="{% url 'customers:change-password' %}" class="btn-secondary">Change Password</a>
+                </div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>📧 Email</h3>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="setting-control">
+                    <span class="badge-verified">✓ Verified</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrations Section -->
+    <div class="settings-section">
+        <div class="section-header">
+            <h2>🔗 Integrations</h2>
+            <p class="section-description">Connect with external services</p>
+        </div>
+        <div class="settings-items">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>📲 WhatsApp Business</h3>
+                    <p>Send bills and updates via WhatsApp</p>
+                </div>
+                <div class="setting-control">
+                    <span class="badge-active">✓ Active</span>
+                </div>
+            </div>
+            <div class="setting-item disabled">
+                <div class="setting-info">
+                    <h3>💳 Payment Gateway</h3>
+                    <p>Accept online payments (Coming Soon)</p>
+                </div>
+                <div class="setting-control">
+                    <span class="badge-coming-soon">Soon</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone Section -->
+    <div class="settings-section danger-zone">
+        <div class="section-header">
+            <h2>⚠️ Danger Zone</h2>
+            <p class="section-description">Irreversible actions</p>
+        </div>
+        <div class="settings-items">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>🚪 Logout</h3>
+                    <p>Sign out from your account</p>
+                </div>
+                <div class="setting-control">
+                    <form method="POST" action="{% url 'customers:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout">Logout</button>
+                    </form>
+                </div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <h3>🗑️ Delete Account</h3>
+                    <p>Permanently delete your account and all data</p>
+                </div>
+                <div class="setting-control">
+                    <a href="{% url 'customers:delete-account-confirm' %}" class="btn-danger">Delete Account</a>
+                    {% if user.is_pending_deletion %}
+                    <span class="badge-danger"
+                        style="margin-left: 10px; font-size: 12px; background: #fee2e2; color: #ef4444; padding: 4px 8px; border-radius: 4px;">Pending
+                        Deletion</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/settings.js' %}"></script>
+{% endblock %}

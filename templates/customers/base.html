@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Subhlabh{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/Logo.png' %}?v=1.1">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/Logo.png' %}?v=1.1">
+    <link rel="apple-touch-icon" href="{% static 'images/Logo.png' %}?v=1.1">
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="top-nav-left">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div class="logo">
+                <img src="{% static 'images/Logo.png' %}" alt="Subhlabh" class="logo-img">
+                <span class="logo-text">Subhlabh</span>
+            </div>
+        </div>
+        <div class="top-nav-right">
+            <div class="user-menu">
+                <a href="{% url 'customers:profile' %}" class="user-btn" id="userBtn" style="text-decoration: none;">
+                    {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="Profile" class="user-pic">
+                    {% else %}
+                    <div class="user-placeholder">👤</div>
+                    {% endif %}
+                    <span class="user-name">{{ user.first_name|default:user.email }}</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="nav-menu">
+                <li class="nav-item">
+                    <a href="{% url 'customers:dashboard' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <span>📊</span> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:customer-list' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'customer-list' %}active{% endif %}">
+                        <span>👥</span> Customers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:product-list' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'product-list' %}active{% endif %}">
+                        <span>📦</span> Products
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:offer-list' %}"
+                        class="nav-link {% if 'offer' in request.resolver_match.url_name %}active{% endif %}">
+                        <span>🏷️</span> Offers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:billing' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'billing' %}active{% endif %}">
+                        <span>💰</span> New Sale
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:sales-history' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'sales-history' %}active{% endif %}">
+                        <span>📋</span> Sales History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'customers:reports' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+                        <span>📈</span> Reports
+                    </a>
+                </li>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="message {% if message.tags %}message-{{ message.tags }}{% endif %}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{% static 'js/common.js' %}"></script>
+    <script src="{% static 'js/layout.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,305 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Products - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h1>📦 Products Inventory</h1>
+        <p>Manage your product catalog</p>
+    </div>
+    <div class="header-actions">
+        <button onclick="showImportModal()" class="btn-secondary">
+            📥 Import
+        </button>
+        <button onclick="exportProducts()" class="btn-secondary">
+            📤 Export
+        </button>
+        <button onclick="showAddProductModal()" class="btn-primary">
+            ➕ Add Product
+        </button>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar">
+    <form method="GET" class="search-form">
+        <input type="text" name="search" placeholder="Search by name or category..." value="{{ search }}"
+            class="search-input">
+        <button type="submit" class="btn-search">🔍 Search</button>
+    </form>
+
+    <div class="filter-controls">
+        <form method="GET" class="filter-form">
+            <select name="category" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for value, label in categories %}
+                <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <form method="GET" class="sort-form">
+            <input type="hidden" name="search" value="{{ search }}">
+            <input type="hidden" name="category" value="{{ category }}">
+            <select name="sort" class="filter-select" onchange="this.form.submit()">
+                <option value="name" {% if sort == 'name' %}selected{% endif %}>Sort by Name</option>
+                <option value="price" {% if sort == 'price' %}selected{% endif %}>Sort by Price</option>
+                <option value="stock" {% if sort == 'stock' %}selected{% endif %}>Sort by Stock</option>
+            </select>
+        </form>
+    </div>
+</div>
+
+<!-- Products Grid -->
+<div class="products-container">
+    {% if products %}
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card {% if product.stock_quantity < 10 %}low-stock{% endif %}">
+            {% if product.stock_quantity < 10 %} <div class="stock-alert">⚠️ Low Stock</div>
+        {% endif %}
+
+        <div class="product-image">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+            <div class="placeholder-image">📦</div>
+            {% endif %}
+        </div>
+
+        <div class="product-info">
+            <h3 class="product-name">{{ product.name }}</h3>
+            <span class="product-category">{{ product.get_category_display }}</span>
+            <span class="product-type-badge {{ product.product_type }}">{{ product.get_product_type_display }}</span>
+
+            <div class="product-pricing">
+                <div class="price">₹{{ product.price|floatformat:2 }}</div>
+                {% if product.product_type == 'product' %}
+                <div class="unit">per {{ product.get_unit_display }}</div>
+                {% endif %}
+            </div>
+
+            {% if product.product_type == 'product' %}
+            <div class="stock-info">
+                <span class="stock-label">Stock:</span>
+                <span class="stock-value {% if product.stock_quantity < 10 %}low{% endif %}">
+                    {{ product.stock_quantity }} {{ product.get_unit_display }}
+                </span>
+            </div>
+            {% else %}
+            <div class="service-info">
+                <span class="service-label">Service</span>
+                {% if product.description %}
+                <p class="service-description">{{ product.description|truncatewords:10 }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="product-actions">
+            <a href="{% url 'customers:product-detail' product.id %}" class="btn-action view" title="View Details">
+                👁️
+            </a>
+            <button onclick="editProduct({{ product.id }})" class="btn-action edit" title="Edit">
+                ✏️
+            </button>
+            <button onclick="deleteProduct({{ product.id }}, '{{ product.name|escapejs }}')" class="btn-action delete"
+                title="Delete">
+                🗑️
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page|add:-1 }}{% if search %}&search={{ search }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+        class="page-btn">
+        ← Previous
+    </a>
+    {% endif %}
+
+    <span class="page-info">Page {{ page }} of {{ pages }}</span>
+
+    {% if page < pages %} <a
+        href="?page={{ page|add:1 }}{% if search %}&search={{ search }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
+        class="page-btn">
+        Next →
+        </a>
+        {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h3>No products found</h3>
+    {% if search or category %}
+    <p>No results for your search/filter</p>
+    <a href="{% url 'customers:product-list' %}" class="btn-secondary">Clear Filters</a>
+    {% else %}
+    <p>Add your first product to start managing inventory</p>
+    <button onclick="showAddProductModal()" class="btn-primary">Add Product</button>
+    {% endif %}
+</div>
+{% endif %}
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="productModal" class="modal" style="display: none;">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="modalTitle">➕ Add Product</h3>
+            <button onclick="closeProductModal()" class="close-btn">✕</button>
+        </div>
+
+        <form id="productForm" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" id="productId" name="product_id">
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="image" class="form-label">Product Image (Optional)</label>
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <input type="file" id="image" name="image" accept="image/*" onchange="previewImage(this)"
+                            style="display: none;">
+                        <div id="imagePreview" class="image-preview">
+                            <div class="upload-placeholder" onclick="document.getElementById('image').click()">
+                                <span class="upload-icon">📷</span>
+                                <p>Click to upload image</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="name" class="form-label">Product Name *</label>
+                    <input type="text" id="name" name="name" class="form-input" placeholder="Enter product name"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="product_type" class="form-label">Type *</label>
+                    <select id="product_type" name="product_type" class="form-input" required>
+                        <option value="product">Product</option>
+                        <option value="service">Service</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="category" class="form-label">Category *</label>
+                    <select id="category" name="category" class="form-input" required>
+                        <option value="">Select category</option>
+                        {% for value, label in categories %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="price" class="form-label">Price (₹) *</label>
+                    <input type="number" id="price" name="price" class="form-input" step="0.01" min="0"
+                        placeholder="0.00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="unit" class="form-label">Unit *</label>
+                    <select id="unit" name="unit" class="form-input">
+                        <option value="">Select unit</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="gm">Gram (gm)</option>
+                        <option value="lt">Liter (lt)</option>
+                        <option value="ml">Milliliter (ml)</option>
+                        <option value="piece">Piece</option>
+                        <option value="packet">Packet</option>
+                        <option value="box">Box</option>
+                        <option value="dozen">Dozen</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="stock_quantity" class="form-label">Stock Quantity *</label>
+                    <input type="number" id="stock_quantity" name="stock_quantity" class="form-input" step="0.01"
+                        min="0" placeholder="0">
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-textarea" rows="4"
+                        placeholder="Describe the service..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="closeProductModal()" class="btn-cancel">Cancel</button>
+                <button type="submit" class="btn-submit" id="submitBtn">💾 Save Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📥 Import Products</h3>
+            <button onclick="closeImportModal()" class="close-btn">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'customers:product-import' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Upload CSV/Excel File</label>
+                <input type="file" name="file" accept=".csv,.xlsx,.xls" class="form-input" required>
+                <p class="form-hint">File should have columns: name, category, price, unit, stock_quantity</p>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="closeImportModal()" class="btn-cancel">Cancel</button>
+                <button type="submit" class="btn-submit">📥 Import</button>
+            </div>
+        </form>
+
+        <div class="download-template">
+            <a href="{% url 'customers:product-template' %}" class="btn-link">📄 Download Template</a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Delete Product?</h3>
+        <p>Are you sure you want to delete <strong id="productName"></strong>?</p>
+        <p class="warning-text">⚠️ This action cannot be undone.</p>
+        <form id="deleteForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-actions">
+                <button type="button" onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.productUrls = {
+        create: '{% url "customers:product-create" %}',
+        export: '{% url "customers:product-export" %}'
+    };
+</script>
+<script src="{% static 'js/product_list.js' %}"></script>
+{% endblock %}

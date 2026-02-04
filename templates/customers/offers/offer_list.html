@@ -1,0 +1,138 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Offers - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/offers.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="header-content">
+        <h1>🏷️ Offers & Promotions</h1>
+        <p>Manage discounts and special offers for your customers</p>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'customers:offer-create' %}" class="btn-primary">
+            ➕ Create New Offer
+        </a>
+    </div>
+</div>
+
+<!-- Offers Grid -->
+<div class="offers-container">
+    {% if offers %}
+    <div class="offers-grid">
+        {% for offer in offers %}
+        <div class="offer-card {% if not offer.is_valid %}inactive{% endif %}">
+            <div class="offer-status">
+                {% if offer.is_valid %}
+                <span class="status-badge active">Active</span>
+                {% else %}
+                <span class="status-badge inactive">Inactive</span>
+                {% endif %}
+            </div>
+
+            <div class="offer-icon">
+                {% if offer.offer_type == 'percentage' %}
+                Percent
+                {% elif offer.offer_type == 'flat' %}
+                Flat
+                {% else %}
+                BOGO
+                {% endif %}
+            </div>
+
+            <div class="offer-info">
+                <h3 class="offer-name">{{ offer.name }}</h3>
+                <p class="offer-desc">{{ offer.description|default:"No description" }}</p>
+
+                <div class="offer-details">
+                    <div class="detail-item">
+                        <span class="label">Type</span>
+                        <span class="value">{{ offer.get_offer_type_display }}</span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="label">Discount</span>
+                        <span class="value highlight">
+                            {% if offer.offer_type == 'bogo' %}
+                            Buy {{ offer.buy_quantity }} Get {{ offer.get_quantity }}
+                            {% elif offer.offer_type == 'percentage' %}
+                            {{ offer.discount_value }}% OFF
+                            {% else %}
+                            ₹{{ offer.discount_value }} OFF
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {% if offer.min_purchase_amount > 0 %}
+                    <div class="detail-item">
+                        <span class="label">Min Order</span>
+                        <span class="value">₹{{ offer.min_purchase_amount }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="detail-item">
+                        <span class="label">Valid Until</span>
+                        <span class="value">{{ offer.end_date|date:"d M Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="offer-actions">
+                <a href="{% url 'customers:offer-edit' offer.pk %}" class="btn-action edit" title="Edit">
+                    ✏️ Edit
+                </a>
+                <button class="btn-action delete" title="Delete" data-offer-id="{{ offer.pk }}"
+                    data-offer-name="{{ offer.name|escapejs }}">
+                    🗑️ Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🏷️</div>
+        <h3>No Offers Created</h3>
+        <p>Create your first offer to attract more customers!</p>
+        <a href="{% url 'customers:offer-create' %}" class="btn-primary">Create First Offer</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Delete Offer?</h3>
+        <p>Are you sure you want to delete <strong id="offerName"></strong>?</p>
+        <p class="warning-text">⚠️ This action cannot be undone.</p>
+        <form id="deleteForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-actions">
+                <button type="button" onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/offers.js' %}"></script>
+<script>
+    // Handle delete button clicks
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-action.delete')) {
+            e.preventDefault();
+            const button = e.target.closest('.btn-action.delete');
+            const offerId = button.getAttribute('data-offer-id');
+            const offerName = button.getAttribute('data-offer-name');
+            deleteOffer(offerId, offerName);
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

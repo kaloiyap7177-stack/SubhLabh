@@ -1,0 +1,143 @@
+<!-- Account Deletion Confirmation Modal -->
+<div id="deleteAccountModal" class="modal" style="display: none;">
+    <div class="modal-content delete-account-modal">
+        <div class="modal-header danger-header">
+            <h3>⚠️ Delete Your Account?</h3>
+            <button onclick="closeDeleteModal()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="warning-icon">
+                🗑️
+            </div>
+
+            <div class="warning-text">
+                <p class="main-warning">We're sorry to see you go. Please read this carefully.</p>
+                <p>When you delete your account, your data will be <strong>permanently removed</strong> after a
+                    <strong>30-day grace period</strong>.</p>
+            </div>
+
+            <div class="data-loss-list">
+                <p>You will lose access to:</p>
+                <ul>
+                    <li>📉 All sales history and reports</li>
+                    <li>👥 Customer database and udhar records</li>
+                    <li>📦 Product inventory and stock levels</li>
+                    <li>🏷️ Active offers and discounts</li>
+                    <li>🖼️ Shop profile and branding</li>
+                </ul>
+            </div>
+
+            <div class="grace-period-info">
+                <h4>⏳ 30-Day Grace Period</h4>
+                <p>Your account will strictly be scheduled for deletion. If you change your mind within 30 days, simply
+                    <strong>log in</strong> to your account to cancel the deletion and restore everything instantly.</p>
+            </div>
+
+            <div class="confirmation-checkbox">
+                <label>
+                    <input type="checkbox" id="confirmDeleteCheckbox" onchange="toggleDeleteButton()">
+                    I understand that my account will be deleted after 30 days.
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+                <form action="{% url 'customers:request-account-deletion' %}" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" id="finalDeleteBtn" class="btn-danger" disabled>Schedule Deletion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Modal Styles specific to Delete Account */
+    .delete-account-modal {
+        max-width: 500px;
+        border-top: 5px solid #ef4444;
+    }
+
+    .danger-header h3 {
+        color: #ef4444;
+    }
+
+    .warning-icon {
+        font-size: 48px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .warning-text {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .main-warning {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .data-loss-list {
+        background: #fff5f5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #fee2e2;
+    }
+
+    .data-loss-list ul {
+        margin: 10px 0 0 20px;
+        padding: 0;
+    }
+
+    .data-loss-list li {
+        margin-bottom: 5px;
+        color: #7f1d1d;
+    }
+
+    .grace-period-info {
+        background: #f0f9ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #bae6fd;
+    }
+
+    .grace-period-info h4 {
+        color: #0369a1;
+        margin: 0 0 5px 0;
+    }
+
+    .grace-period-info p {
+        color: #0c4a6e;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .confirmation-checkbox {
+        margin-bottom: 25px;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+    }
+
+    .confirmation-checkbox label {
+        display: flex;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 500;
+        user-select: none;
+    }
+
+    .confirmation-checkbox input {
+        margin-top: 4px;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+</style>

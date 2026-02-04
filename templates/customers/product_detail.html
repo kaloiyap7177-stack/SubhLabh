@@ -1,0 +1,120 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Product Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Product Header -->
+<div class="product-header">
+    <div class="product-info">
+        <div class="product-image-large">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+            <div class="placeholder-image">📦</div>
+            {% endif %}
+        </div>
+        <div class="product-details">
+            <span class="category-badge">{{ product.get_category_display }}</span>
+            <h1>{{ product.name }}</h1>
+            <div class="price-info">
+                <span class="price">₹{{ product.price|floatformat:2 }}</span>
+                <span class="unit">per {{ product.get_unit_display }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="header-actions">
+        <a href="{% url 'customers:product-edit' product.id %}" class="btn-edit">✏️ Edit</a>
+        <a href="{% url 'customers:product-list' %}" class="btn-back">← Back</a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-row">
+    <div class="stat-box stock {% if product.stock_quantity < 10 %}low-stock{% endif %}">
+        <div class="stat-icon">📦</div>
+        <div class="stat-details">
+            <p class="stat-label">Current Stock</p>
+            <h2 class="stat-value">{{ product.stock_quantity }} {{ product.get_unit_display }}</h2>
+            {% if product.stock_quantity < 10 %} <span class="low-stock-warning">⚠️ Low Stock</span>
+                {% endif %}
+        </div>
+    </div>
+
+    <div class="stat-box sold">
+        <div class="stat-icon">🛒</div>
+        <div class="stat-details">
+            <p class="stat-label">Total Sold</p>
+            <h2 class="stat-value">{{ total_sold }} {{ product.get_unit_display }}</h2>
+        </div>
+    </div>
+
+    <div class="stat-box revenue">
+        <div class="stat-icon">💰</div>
+        <div class="stat-details">
+            <p class="stat-label">Total Revenue</p>
+            <h2 class="stat-value">₹{{ total_revenue|floatformat:2 }}</h2>
+        </div>
+    </div>
+</div>
+
+<!-- Sales History -->
+<div class="sales-section">
+    <div class="section-header">
+        <h3>📊 Sales History</h3>
+    </div>
+
+    {% if sale_items %}
+    <div class="table-responsive">
+        <table class="sales-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Customer</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale_items %}
+                <tr>
+                    <td>{{ item.sale.sale_date|date:"M d, Y H:i" }}</td>
+                    <td>
+                        {% if item.sale.customer %}
+                        <a href="{% url 'customers:customer-detail' item.sale.customer.id %}" class="customer-link">
+                            {{ item.sale.customer.name }}
+                        </a>
+                        {% else %}
+                        <span class="walk-in">Walk-in Customer</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.quantity }} {{ product.get_unit_display }}</td>
+                    <td>₹{{ item.price_at_sale|floatformat:2 }}</td>
+                    <td class="total-amount">₹{{ item.total_amount|floatformat:2 }}</td>
+                    <td>
+                        <span class="payment-badge {{ item.sale.payment_method }}">
+                            {{ item.sale.get_payment_method_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-message">
+        <p>📭 No sales recorded for this product yet</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/product_detail.js' %}"></script>
+{% endblock %}

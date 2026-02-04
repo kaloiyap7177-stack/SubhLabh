@@ -1,0 +1,336 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Shop Branding - SubhLabh{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    .branding-page {
+        padding: 3rem 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .branding-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        position: relative;
+    }
+
+    .branding-header h1 {
+        font-size: 2.8rem;
+        font-weight: 800;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.75rem;
+    }
+
+    .branding-header p {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+
+    .btn-back {
+        position: absolute;
+        top: 2rem;
+        left: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: #6366f1;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .btn-back:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        transform: translateX(-3px);
+    }
+
+    @media (max-width: 768px) {
+        .btn-back {
+            position: relative;
+            top: 0;
+            left: 0;
+            margin-bottom: 1.5rem;
+            display: inline-flex;
+        }
+
+        .branding-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .branding-header h1 {
+            font-size: 2.2rem;
+        }
+    }
+
+    .card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+        padding: 2.5rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.85rem 1.1rem;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        color: #1e293b;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #6366f1;
+        background: white;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Logo Upload Area Improvements */
+    .logo-management {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .current-logo-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 24px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .logo-preview-img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 16px;
+        object-fit: contain;
+    }
+
+    .logo-upload-btn {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .logo-upload-btn:hover {
+        background: #e2e8f0;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .upload-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #94a3b8;
+    }
+
+    .upload-placeholder i {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-submit {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1.1rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s;
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4);
+    }
+
+    .hint-text {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="branding-page">
+    <div class="branding-header">
+        <a href="{% url 'customers:profile' %}" class="btn-back"><span>←</span> Back</a>
+        <h1>✨ Shop Branding</h1>
+        <p>Manage your professional identity and billing logo.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="brandingForm">
+        {% csrf_token %}
+
+        <!-- Shop Identity Card -->
+        <div class="card">
+            <div class="card-title">🏪 Shop Identity</div>
+
+            <div class="form-group">
+                <label class="form-label">Shop Name</label>
+                <input type="text" name="shop_name" class="form-control" value="{{ profile.shop_name }}"
+                    placeholder="Enter shop name" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Shop Category</label>
+                <select name="shop_category" class="form-control">
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}" {% if profile.shop_category == value %}selected{% endif %}>{{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Shop Logo Card -->
+        <div class="card">
+            <div class="card-title">🖼️ Shop Logo</div>
+
+            <div class="logo-management">
+                <div class="current-logo-container">
+                    {% if profile.shop_logo %}
+                    <img src="{{ profile.shop_logo.url }}" id="logoPreview" class="logo-preview-img">
+                    {% else %}
+                    <div class="upload-placeholder" id="placeholder">
+                        <span style="font-size: 2.5rem;">📁</span>
+                        <span style="font-size: 0.9rem; font-weight: 500;">No Logo</span>
+                    </div>
+                    <img src="" id="logoPreview" class="logo-preview-img" style="display: none;">
+                    {% endif %}
+                </div>
+
+                <div style="text-align: center;">
+                    <input type="file" name="shop_logo" id="logoInput" accept="image/*" style="display: none;">
+                    <label for="logoInput" class="logo-upload-btn">
+                        <span>📤</span> Change Logo
+                    </label>
+                    <div class="hint-text">PNG or JPG recommended. Square shape looks best on bills.</div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">
+            <span>💾</span> Save All Changes
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const logoInput = document.getElementById('logoInput');
+    const logoPreview = document.getElementById('logoPreview');
+    const placeholder = document.getElementById('placeholder');
+
+    logoInput.addEventListener('change', function (e) {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                logoPreview.src = e.target.result;
+                logoPreview.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            }
+
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+</script>
+{% endblock %}

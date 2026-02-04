@@ -1,0 +1,187 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Profile - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="profile-container">
+    <!-- Instagram-style Profile Header -->
+    <div class="profile-header">
+        <div class="profile-main">
+            <div class="profile-picture-large" id="profilePictureContainer">
+                {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" id="profileImage">
+                {% else %}
+                <div class="profile-placeholder-large">👤</div>
+                {% endif %}
+            </div>
+            <div class="profile-main-info">
+                <div class="profile-name-section">
+                    <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat">
+                        <span class="stat-label">Shop:</span>
+                        <span class="stat-number">{{ profile.shop_name|default:"-" }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Phone:</span>
+                        <span class="stat-number">{{ profile.phone|default:"-" }}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Location:</span>
+                        <span class="stat-number">{{ profile.city|default:"-" }}, {{ profile.state|default:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="profile-actions-corner">
+            <a href="{% url 'customers:branding' %}" class="btn-branding" title="Shop Branding">🎨</a>
+            <a href="{% url 'customers:profile-edit' %}" class="btn-edit-profile-page" title="Edit Profile"></a>
+            <a href="{% url 'customers:settings' %}" class="btn-settings" title="Settings"></a>
+        </div>
+        <div class="profile-bio">
+            <p>{{ profile.address|default:"No address provided" }}</p>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="profile-tabs">
+        <button class="tab-button active" onclick="showTab('details')">📋 Details</button>
+        <button class="tab-button" onclick="showTab('account')">🔒 Account</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Details Tab -->
+        <div id="details-tab" class="tab-pane active">
+            <form id="profileForm" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="file" id="profilePictureInput" accept="image/*" style="display: none;"
+                    onchange="previewImage(event)">
+
+                <div class="form-section">
+                    <h3>👤 Personal Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="first_name" value="{{ user.first_name }}"
+                                class="form-input" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="last_name" value="{{ user.last_name }}"
+                                class="form-input" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" value="{{ user.email }}" class="form-input"
+                                readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Mobile Number</label>
+                            <input type="tel" id="phone" name="phone" value="{{ profile.phone }}" class="form-input"
+                                readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- <div class="form-section">
+                    <div class="profile-picture-section">
+                        <h3>🖼️ Profile Picture</h3>
+                        <div class="profile-picture-actions">
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('profilePictureInput').click()">📷 Change Photo</button>
+                        </div>
+                    </div>
+                </div> -->
+
+                <div class="form-section">
+                    <h3>🏪 Shop Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="shopName">Shop Name</label>
+                            <input type="text" id="shopName" name="shop_name" value="{{ profile.shop_name }}"
+                                class="form-input" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="shopCategory">Shop Category</label>
+                            <select id="shopCategory" name="shop_category" class="form-select" disabled>
+                                <option value="pizza" {% if profile.shop_category == 'pizza' %}selected{% endif %}>
+                                    Pizza/Fast Food</option>
+                                <option value="clothes" {% if profile.shop_category == 'clothes' %}selected{% endif %}>
+                                    Clothes</option>
+                                <option value="grocery" {% if profile.shop_category == 'grocery' %}selected{% endif %}>
+                                    Grocery</option>
+                                <option value="bartan" {% if profile.shop_category == 'bartan' %}selected{% endif %}>
+                                    Bartan/Utensils</option>
+                                <option value="medical" {% if profile.shop_category == 'medical' %}selected{% endif %}>
+                                    Medical</option>
+                                <option value="electronics" {% if profile.shop_category == 'electronics' %}selected{% endif %}
+                                    ></option>
+                                Electronics</option>
+                                <option value="other" {% if profile.shop_category == 'other' %}selected{% endif %}>Other
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📍 Address Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="address">Address</label>
+                            <textarea id="address" name="address" class="form-textarea" rows="2"
+                                readonly>{{ profile.address }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" name="city" value="{{ profile.city }}" class="form-input"
+                                readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" name="state" value="{{ profile.state }}" class="form-input"
+                                readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="pincode">Pincode</label>
+                            <input type="text" id="pincode" name="pincode" value="{{ profile.pincode }}"
+                                class="form-input" readonly>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Account Tab -->
+        <div id="account-tab" class="tab-pane" style="display: none;">
+            <div class="account-section">
+                <h3>📅 Account Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Account Created</span>
+                        <span class="info-value">{{ user.date_joined|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Login</span>
+                        <span class="info-value">{{ user.last_login|date:"F d, Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/profile.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Billing - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/billing.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="header-content">
+    <h1>💰 New Sale</h1>
+    <p>Create a new bill for your customer</p>
+</div>
+
+<div class="billing-container">
+    <div class="sale-form-panel">
+        <!-- Customer Selection -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>👤 Customer Details</h3>
+                <button type="button" class="btn-link" onclick="showAddCustomerModal()">➕ Add New Customer</button>
+            </div>
+            <div class="customer-select">
+                <input type="text" id="customerSearchInput" class="form-input"
+                    placeholder="🔍 Search customer by name or phone..." onkeyup="searchCustomers()"
+                    onfocus="showCustomerResults()">
+                <div id="customerResults" class="customer-results">
+                    <!-- Search results here -->
+                </div>
+                <input type="hidden" id="selectedCustomerId" name="customer_id">
+            </div>
+
+            <div id="customerInfo" class="customer-info" style="display: none;">
+                <div class="customer-badge">
+                    <span id="customerName"></span>
+                    <button type="button" class="clear-btn" onclick="clearCustomer()">✕</button>
+                </div>
+                <p>📞 Phone: <span id="customerPhone"></span></p>
+                <p>📉 Current Udhar: <span id="customerUdhar" class="udhar-amount"></span></p>
+            </div>
+        </div>
+
+        <!-- Product Search -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>📦 Add Products & Services</h3>
+                <button type="button" class="btn-link" onclick="showCustomItemModal()">➕ Custom Item</button>
+            </div>
+            <div class="product-search">
+                <input type="text" id="productSearch" class="form-input"
+                    placeholder="🔍 Type product or service name..." onkeyup="searchProducts()">
+                <div id="productResults" class="product-results">
+                    <!-- Search results here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill Items Table -->
+        <div class="form-section">
+            <div class="section-header">
+                <h3>🛒 Bill Items</h3>
+            </div>
+            <div id="billItems" class="bill-items">
+                <!-- Items will be added here -->
+                <div class="empty-state">
+                    <p>🛍️ No items added yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment & Notes -->
+        <div class="form-section">
+            <div class="payment-grid">
+                <div class="form-group">
+                    <label>💳 Payment Method</label>
+                    <select id="paymentMethod" class="form-select" onchange="updatePaymentStatus()">
+                        <option value="cash">💵 Cash</option>
+                        <option value="upi">📱 UPI / PhonePe / GPay</option>
+                        <option value="card">💳 Debit/Credit Card</option>
+                        <option value="udhar">🕒 Udhar / Credit</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📝 Payment Status</label>
+                    <div id="paymentStatus" class="payment-status">
+                        <span class="status-badge paid">Paid</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>🗒️ Notes (Optional)</label>
+                <textarea id="saleNotes" class="form-textarea" rows="2"
+                    placeholder="Any special notes about this sale..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Summary Panel -->
+    <div class="sale-summary-panel">
+        <div class="summary-card">
+            <h3>📊 Bill Summary</h3>
+            <div id="summaryItems" class="summary-items">
+                <p class="no-items">No items added</p>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <!-- Offers Section -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>🏷️ Available Offers</label>
+                <select id="offerSelect" class="form-select" onchange="handleOfferChange()">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div class="summary-row subtotal">
+                <span>Subtotal:</span>
+                <span id="subtotal">₹0.00</span>
+            </div>
+            <div class="summary-row discount">
+                <span>Discount:</span>
+                <span id="discountAmount" class="success-text">-₹0.00</span>
+            </div>
+            <div class="summary-row total">
+                <span>Grand Total:</span>
+                <span id="totalAmount">₹0.00</span>
+            </div>
+
+            <div class="summary-actions" id="mainSummaryActions">
+                <button type="button" id="saveSaleBtn" class="btn-save" onclick="saveSale()">💾 Save Sale</button>
+                <button type="button" id="printBillBtn" class="btn-print" onclick="printBill()" disabled>🖨️ Print
+                    Bill</button>
+            </div>
+
+            <!-- Post-Sale Success Actions -->
+            <div id="postSaleActions" class="post-sale-actions" style="display: none;">
+                <div class="success-banner">
+                    <span class="success-icon">✅</span>
+                    <div class="success-text-content">
+                        <h4>Sale Completed!</h4>
+                        <p id="saleIdDisplay"></p>
+                    </div>
+                </div>
+                <div class="action-buttons-grid">
+                    <button type="button" onclick="sendWhatsAppBill()" class="btn-whatsapp-large">
+                        <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                    </button>
+                    <button type="button" onclick="printLastBill()" class="btn-print-large">
+                        <i class="fas fa-print"></i> Print Bill
+                    </button>
+                    <button type="button" onclick="newSale()" class="btn-new-sale">
+                        <i class="fas fa-plus"></i> New Sale
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span class="stat-label">Items</span>
+                <span id="itemCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Qty</span>
+                <span id="totalQty" class="stat-value">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div id="addCustomerModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>👤 Add New Customer</h3>
+            <button onclick="closeAddCustomerModal()" class="close-btn">✕</button>
+        </div>
+        <form id="addCustomerForm" onsubmit="saveNewCustomer(event)" style="padding: 25px;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Full Name *</label>
+                <input type="text" id="newCustomerName" class="form-input" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Phone Number *</label>
+                <input type="tel" id="newCustomerPhone" class="form-input" pattern="[0-9]{10}" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Notes (Optional)</label>
+                <textarea id="newCustomerNotes" class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; text-align: right;">
+                <button type="button" onclick="closeAddCustomerModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save Customer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Add Custom Item Modal -->
+<div id="customItemModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>➕ Add Custom Item</h3>
+            <button onclick="closeCustomItemModal()" class="close-btn">✕</button>
+        </div>
+        <form id="customItemForm" onsubmit="addCustomItem(event)" style="padding: 25px;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Item Name *</label>
+                <input type="text" id="customItemName" class="form-input" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Description (Optional)</label>
+                <textarea id="customItemDescription" class="form-textarea" rows="2"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Price (₹) *</label>
+                <input type="number" id="customItemPrice" class="form-input" step="0.01" min="0" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Quantity</label>
+                <input type="number" id="customItemQuantity" class="form-input" step="0.01" min="0.01" value="1">
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; text-align: right;">
+                <button type="button" onclick="closeCustomItemModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">➕ Add Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.billingConfig = {
+        productsJson: '{{ products_json|escapejs }}',
+        customersJson: '{{ customers_json|escapejs }}',
+        offersJson: '{{ offers_json|escapejs }}',
+        shopName: '{{ shop_name|escapejs }}',
+        shopAddress: '{{ profile.address|default:""|escapejs }}',
+        shopPhone: '{{ profile.phone|default:""|escapejs }}',
+        billingUrl: '{% url "customers:billing" %}',
+        customerCreateUrl: '{% url "customers:customer-create" %}',
+        csrfToken: '{{ csrf_token }}'
+    };
+</script>
+<script src="{% static 'js/billing.js' %}?v=2"></script>
+{% endblock %}

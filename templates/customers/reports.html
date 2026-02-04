@@ -1,0 +1,342 @@
+{% extends "customers/base.html" %}
+{% load static %}
+
+{% block title %}Reports - Subhlabh{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}?v=1">
+{% endblock %}
+
+{% block content %}
+
+<div class="reports-container">
+    <div class="reports-header">
+        <div class="header-main">
+            <h1>📈 Business Reports</h1>
+            <p>Analyze your sales performance and customer trends</p>
+        </div>
+        <div class="header-filters">
+            <div class="filter-group">
+                <input type="date" id="dateFrom" class="filter-input" placeholder="From">
+                <input type="date" id="dateTo" class="filter-input" placeholder="To">
+            </div>
+            <div class="filter-group">
+                <select id="yearFilter" class="filter-select">
+                    <option value="">All Years</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button onclick="applyFilters()" class="btn-filter">Apply Filters</button>
+                <button onclick="resetFilters()" class="btn-reset">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+                <span class="stat-label">Total Revenue</span>
+                <span class="stat-value">₹{{ today_sales|default:"0" }}</span>
+                <span class="stat-trend trend-up">Today</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🛍️</div>
+            <div class="stat-info">
+                <span class="stat-label">Revenue (7 Days)</span>
+                <span class="stat-value">₹{{ last_7_days_sales|default:"0" }}</span>
+                <span class="stat-trend">Last week</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+                <span class="stat-label">Total Products Sold</span>
+                <span class="stat-value">{% if product_sales %}{{ product_sales.0.total_quantity }}{% else %}0{% endif %}
+                   
+                </span>
+                <span class="stat-trend trend-up">Top Product</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <span class="stat-label">Active Customers</span>
+                <span class="stat-value">{% if customer_purchases %}{{ customer_purchases|length }}{% else %}0{% endif %}
+                    
+                </span>
+                <span class="stat-trend">This Month</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Tabs -->
+    <div class="reports-tabs">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="showReportTab('monthly')">Monthly Sales</button>
+            <button class="tab-button" onclick="showReportTab('yearly')">Yearly Comparison</button>
+            <button class="tab-button" onclick="showReportTab('product')">Product Performance</button>
+            <button class="tab-button" onclick="showReportTab('category')">Category Wise</button>
+            <button class="tab-button" onclick="showReportTab('customer')">Top Customers</button>
+            <button class="tab-button" onclick="showReportTab('daily')">Daily Snapshot</button>
+        </div>
+
+        <div class="tab-content">
+            <!-- Monthly Sales Tab -->
+            <div id="monthly-tab" class="tab-pane active">
+                <div class="chart-container-wrapper">
+                    <div class="chart-main">
+                        <div class="chart-header">
+                            <h3>Monthly Sales Performance</h3>
+                            <button onclick="exportReport('monthly', 'excel')" class="btn-download">⬇️ Export
+                                Excel</button>
+                        </div>
+                        <div class="chart-area">
+                            <canvas id="monthlySalesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yearly Comparison Tab -->
+            <div id="yearly-tab" class="tab-pane">
+                <div class="chart-container-wrapper">
+                    <div class="chart-main">
+                        <div class="chart-header">
+                            <h3>Year-on-Year Comparison</h3>
+                            <button onclick="exportReport('yearly', 'excel')" class="btn-download">⬇️ Export
+                                Excel</button>
+                        </div>
+                        <div class="chart-area">
+                            <canvas id="yearlySalesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Performance Tab -->
+            <div id="product-tab" class="tab-pane">
+                <div class="report-split">
+                    <div class="chart-main">
+                        <div class="chart-header">
+                            <h3>Product Wise Sales</h3>
+                        </div>
+                        <div class="chart-area">
+                            <canvas id="productSalesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <h3>Detailed Product report</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Qty Sold</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in product_sales|slice:":10" %}
+                                <tr>
+                                    <td>{{ item.product__name }}</td>
+                                    <td>{{ item.product__category|default:"General" }}</td>
+                                    <td>{{ item.total_quantity }}</td>
+                                    <td>₹{{ item.total_revenue|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="empty-msg">No product sales data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Wise Tab -->
+            <div id="category-tab" class="tab-pane">
+                <div class="report-split">
+                    <div class="chart-main">
+                        <div class="chart-header">
+                            <h3>Sales by Category</h3>
+                        </div>
+                        <div class="chart-area">
+                            <canvas id="categorySalesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <h3>Category Summary</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Total Sales</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in category_sales %}
+                                <tr>
+                                    <td>{{ item.product__category|default:"General" }}</td>
+                                    <td>{{ item.total_sales }}</td>
+                                    <td>₹{{ item.total_revenue|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="empty-msg">No categories found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Customers Tab -->
+            <div id="customer-tab" class="tab-pane">
+                <div class="report-split">
+                    <div class="chart-main">
+                        <div class="chart-header">
+                            <h3>Top Purchasing Customers</h3>
+                        </div>
+                        <div class="chart-area">
+                            <canvas id="customerPurchasesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="report-table-wrapper">
+                        <h3>Customer Ranking</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Total Visits</th>
+                                    <th>Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in customer_purchases|slice:":10" %}
+                                <tr>
+                                    <td>{{ item.customer__name|default:"Walking Customer" }}</td>
+                                    <td>{{ item.total_visits }}</td>
+                                    <td>₹{{ item.total_amount|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="empty-msg">No customer data found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Snapshot Tab -->
+            <div id="daily-tab" class="tab-pane">
+                <div class="daily-report">
+                    <div class="daily-header">
+                        <h3>Daily Sales Snapshot</h3>
+                        <div class="daily-stats">
+                            <div class="d-stat">
+                                <span class="d-label">Today</span>
+                                <span class="d-value">₹{{ today_sales|default:"0.00" }}</span>
+                            </div>
+                            <div class="d-stat">
+                                <span class="d-label">Yesterday</span>
+                                <span class="d-value">₹{{ yesterday_sales|default:"0.00" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="report-split">
+                        <div class="chart-main">
+                            <div class="chart-area">
+                                <canvas id="dailyComparisonChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="export-options">
+                            <div class="export-card">
+                                <h3>Download Full Report</h3>
+                                <p>Generate a detailed PDF or Excel report with all transactional data for the selected
+                                    period.</p>
+                            </div>
+                            <div class="export-actions">
+                                <button onclick="exportReport('daily-comparison', 'pdf')" class="btn-export">📄
+                                    PDF</button>
+                                <button onclick="exportReport('daily-comparison', 'excel')" class="btn-export">📊
+                                    Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Robust Data Injection using JSON Script tags -->
+{{ monthly_sales|json_script:"monthly-sales-data" }}
+{{ yearly_sales|json_script:"yearly-sales-data" }}
+{{ product_sales|json_script:"product-sales-data" }}
+{{ category_sales|json_script:"category-sales-data" }}
+{{ customer_purchases|json_script:"customer-purchases-data" }}
+<script id="daily-sales-data" type="application/json">
+{
+    "today": {{ today_sales|default:0|stringformat:"f" }},
+    "yesterday": {{ yesterday_sales|default:0|stringformat:"f" }},
+    "last7Days": {{ last_7_days_sales|default:0|stringformat:"f" }}
+}
+</script>
+
+<script>
+    (function () {
+        const parseJSON = (id) => JSON.parse(document.getElementById(id).textContent);
+
+        const monthlyRaw = parseJSON('monthly-sales-data');
+        const yearlyRaw = parseJSON('yearly-sales-data');
+        const productRaw = parseJSON('product-sales-data');
+        const categoryRaw = parseJSON('category-sales-data');
+        const customerRaw = parseJSON('customer-purchases-data');
+        const dailyRaw = parseJSON('daily-sales-data');
+
+        window.reportConfig = {
+            urls: {
+                reports: '{% url "customers:reports" %}'
+            },
+            data: {
+                monthly: {
+                    labels: monthlyRaw.map(item => item.month_display || 'Unknown'),
+                    data: monthlyRaw.map(item => parseFloat(item.total_revenue) || 0)
+                },
+                yearly: {
+                    labels: yearlyRaw.map(item => item.year || 'Unknown'),
+                    data: yearlyRaw.map(item => parseFloat(item.total_revenue) || 0)
+                },
+                product: {
+                    labels: productRaw.slice(0, 5).map(item => item.product__name || 'Product'),
+                    data: productRaw.slice(0, 5).map(item => parseFloat(item.total_quantity) || 0)
+                },
+                category: {
+                    labels: categoryRaw.map(item => item.product__category || 'General'),
+                    data: categoryRaw.map(item => parseFloat(item.total_revenue) || 0)
+                },
+                customer: {
+                    labels: customerRaw.slice(0, 5).map(item => (item.customer__name || 'Walking Customer').substring(0, 10)),
+                    data: customerRaw.slice(0, 5).map(item => parseFloat(item.total_amount) || 0)
+                },
+                daily: dailyRaw
+            }
+        };
+    })();
+</script>
+<script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,408 @@
+{% extends "customers/base.html" %}
+
+{% block title %}{% if offer %}Edit Offer{% else %}Create Offer{% endif %} - Subhlabh{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h3>{% if offer %}✏️ Edit Offer{% else %}➕ Create New Offer{% endif %}</h3>
+            <a href="{% url 'customers:offer-list' %}" class="close-btn">✕</a>
+        </div>
+
+        <form method="post" class="custom-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                <p class="error-msg">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-grid">
+                <!-- Basic Info -->
+                <div class="form-group full-width">
+                    <label class="form-label">Offer Name *</label>
+                    <input type="text" name="name" class="form-input" value="{{ form.name.value|default:'' }}" required
+                        placeholder="e.g. Summer Sale 2024">
+                    {% if form.name.errors %}
+                    <div class="error-msg">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-textarea" rows="3"
+                        placeholder="Describe the offer details...">{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <div class="error-msg">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Configuration -->
+                <div class="form-group">
+                    <label class="form-label">Offer Type *</label>
+                    {{ form.offer_type }}
+                    {% if form.offer_type.errors %}
+                    <div class="error-msg">{{ form.offer_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div class="checkbox-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="status-label">Active</span>
+                    </div>
+                </div>
+
+                <!-- Type Specific Fields -->
+                <div class="form-group full-width" id="value-fields">
+                    <div class="form-grid inner">
+                        <div class="form-group">
+                            <label class="form-label" id="discount-label">Discount Value *</label>
+                            <input type="number" name="discount_value" id="discount_value" class="form-input"
+                                step="0.01" value="{{ form.discount_value.value|default:'0' }}">
+                            {% if form.discount_value.errors %}
+                            <div class="error-msg">{{ form.discount_value.errors.0 }}</div>
+                            {% endif %}
+                            <p class="form-hint" id="discount-help">Enter amount or percentage</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Min Purchase Amount (₹)</label>
+                            <input type="number" name="min_purchase_amount" class="form-input" step="0.01"
+                                value="{{ form.min_purchase_amount.value|default:'0' }}">
+                            {% if form.min_purchase_amount.errors %}
+                            <div class="error-msg">{{ form.min_purchase_amount.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group full-width" id="bogo-fields" style="display: none;">
+                    <div class="form-grid inner">
+                        <div class="form-group">
+                            <label class="form-label">Buy Quantity</label>
+                            <input type="number" name="buy_quantity" class="form-input"
+                                value="{{ form.buy_quantity.value|default:'0' }}">
+                            {% if form.buy_quantity.errors %}
+                            <div class="error-msg">{{ form.buy_quantity.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Get Free Quantity</label>
+                            <input type="number" name="get_quantity" class="form-input"
+                                value="{{ form.get_quantity.value|default:'0' }}">
+                            {% if form.get_quantity.errors %}
+                            <div class="error-msg">{{ form.get_quantity.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duration -->
+                <div class="form-group">
+                    <label class="form-label">Start Date *</label>
+                    <input type="datetime-local" name="start_date" class="form-input"
+                        value="{{ form.start_date.value|date:'Y-m-d\TH:i' }}" required>
+                    {% if form.start_date.errors %}
+                    <div class="error-msg">{{ form.start_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">End Date *</label>
+                    <input type="datetime-local" name="end_date" class="form-input"
+                        value="{{ form.end_date.value|date:'Y-m-d\TH:i' }}" required>
+                    {% if form.end_date.errors %}
+                    <div class="error-msg">{{ form.end_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Products -->
+                <div class="form-group full-width">
+                    <label class="form-label">Applicable Products (Optional)</label>
+                    <select name="applicable_products" class="form-input" multiple style="height: 100px;">
+                        {% for value, label in form.fields.applicable_products.choices %}
+                        <option value="{{ value }}" {% if value in form.applicable_products.value|default:"" %}selected{% endif %}></option>
+                            
+                            {{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.applicable_products.errors %}
+                    <div class="error-msg">{{ form.applicable_products.errors.0 }}</div>
+                    {% endif %}
+                    <p class="form-hint">Hold Ctrl/Cmd to select multiple products. Leave empty for general offers.</p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'customers:offer-list' %}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-submit">💾 Save Offer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .page-container {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 800px;
+        overflow: hidden;
+    }
+
+    .form-header {
+        padding: 25px;
+        border-bottom: 1px solid var(--gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-header h3 {
+        margin: 0;
+        color: var(--dark);
+        font-size: 20px;
+    }
+
+    .close-btn {
+        text-decoration: none;
+        color: #666;
+        font-size: 20px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.3s;
+    }
+
+    .close-btn:hover {
+        background: var(--light);
+    }
+
+    .custom-form {
+        padding: 30px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+
+    .form-grid.inner {
+        margin: 0;
+        padding: 20px;
+        background: var(--light);
+        border-radius: 12px;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 14px;
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--gray-light);
+        border-radius: 10px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: border-color 0.3s;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .form-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+    }
+
+    .error-msg {
+        color: var(--danger);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    /* Switch */
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 46px;
+        /* Match input height */
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked+.slider {
+        background-color: var(--success);
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(24px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+    .status-label {
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    /* Actions */
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    .btn-cancel {
+        padding: 12px 24px;
+        background: white;
+        color: var(--dark);
+        border: 2px solid var(--gray-light);
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-cancel:hover {
+        background: var(--light);
+    }
+
+    .btn-submit {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(91, 127, 255, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(91, 127, 255, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const offerTypeSelect = document.getElementById('id_offer_type');
+        const valueFields = document.getElementById('value-fields');
+        const bogoFields = document.getElementById('bogo-fields');
+        const discountLabel = document.getElementById('discount-label');
+        const discountHelp = document.getElementById('discount-help');
+
+        function toggleFields() {
+            const type = offerTypeSelect.value;
+
+            if (type === 'bogo') {
+                valueFields.style.display = 'none';
+                bogoFields.style.display = 'block';
+            } else {
+                valueFields.style.display = 'block';
+                bogoFields.style.display = 'none';
+
+                if (type === 'percentage') {
+                    discountLabel.textContent = 'Discount Percentage (%) *';
+                    discountHelp.textContent = 'Enter percentage (0-100)';
+                } else {
+                    discountLabel.textContent = 'Discount Amount (₹) *';
+                    discountHelp.textContent = 'Enter flat amount in ₹';
+                }
+            }
+        }
+
+        offerTypeSelect.addEventListener('change', toggleFields);
+        toggleFields(); // Initial run
+    });
+</script>
+{% endblock %}
