@@ -43,12 +43,12 @@ function setupCustomerFilter() {
                 if (filterValue === 'all') {
                     row.style.display = '';
                 } else {
-                    const hasUdhar = row.querySelector('.udhar-badge.has-udhar');
-                    if (filterValue === 'with-udhar' && hasUdhar) {
+                    const hasCredit = row.querySelector('.credit-badge.has-credit');
+                    if (filterValue === 'with-credit' && hasCredit) {
                         row.style.display = '';
-                    } else if (filterValue === 'without-udhar' && !hasUdhar) {
+                    } else if (filterValue === 'without-credit' && !hasCredit) {
                         row.style.display = '';
-                    } else if (filterValue !== 'with-udhar' && filterValue !== 'without-udhar') {
+                    } else if (filterValue !== 'with-credit' && filterValue !== 'without-credit') {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';

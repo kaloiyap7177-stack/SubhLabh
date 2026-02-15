@@ -104,7 +104,7 @@
     font-size: 30px;
 }
 
-.stat-icon.udhar {
+.stat-icon.credit {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
 }
 
@@ -281,7 +281,7 @@
     color: #10b981;
 }
 
-.status-badge.udhar {
+.status-badge.credit {
     background: #fee2e2;
     color: #ef4444;
 }
@@ -293,11 +293,11 @@
     gap: 20px;
 }
 
-.udhar-card .section-content {
+.credit-card .section-content {
     padding: 25px;
 }
 
-.udhar-summary {
+.credit-summary {
     margin-bottom: 20px;
 }
 
@@ -320,7 +320,7 @@
     color: #10b981;
 }
 
-.btn-pay-udhar {
+.btn-pay-credit {
     width: 100%;
     padding: 14px;
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -334,13 +334,13 @@
     transition: all 0.3s ease;
 }
 
-.btn-pay-udhar:hover {
+.btn-pay-credit:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 /* Udhar History */
-.udhar-history {
+.credit-history {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -349,7 +349,7 @@
     padding-right: 5px;
 }
 
-.udhar-history::-webkit-scrollbar {
+.credit-history::-webkit-scrollbar {
     width: 6px;
 }
 
@@ -362,7 +362,7 @@
     border-radius: 10px;
 }
 
-.udhar-transaction {
+.credit-transaction {
     padding: 12px;
     background: var(--light);
     border-radius: 8px;

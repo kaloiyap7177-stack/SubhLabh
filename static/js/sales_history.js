@@ -285,11 +285,11 @@ function sendWhatsAppBillFromDetail() {
         // Add payment method and status
         const paymentMethodDisplay = saleData.payment_method === 'cash' ? 'Cash' :
             saleData.payment_method === 'upi' ? 'UPI/PhonePe/GPay' :
-                saleData.payment_method === 'card' ? 'Card' : 'Udhar/Credit';
+                saleData.payment_method === 'card' ? 'Card' : 'Credit'
         message += `*Payment:* ${paymentMethodDisplay}\n`;
 
         if (!saleData.is_paid) {
-            message += `*Status:* Udhar/Pending\n`;
+            message += `*Status:* Credit/Pending\n`;
         } else {
             message += `*Status:* Paid\n`;
         }

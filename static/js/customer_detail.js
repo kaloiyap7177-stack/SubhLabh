@@ -1,10 +1,49 @@
 // Payment Modal Functions
 function showPaymentModal() {
-    document.getElementById('paymentModal').style.display = 'flex';
+    const modal = document.getElementById('paymentModal');
+    const amountInput = document.getElementById('amount');
+    
+    // Reset the form
+    if (amountInput) {
+        amountInput.value = '';
+    }
+    
+    // Show the modal
+    modal.style.display = 'flex';
+    
+    // Focus on the amount input
+    if (amountInput) {
+        setTimeout(() => amountInput.focus(), 100);
+    }
 }
 
 function closePaymentModal() {
     document.getElementById('paymentModal').style.display = 'none';
+}
+
+// Handle payment form submission
+function handlePaymentSubmit(e) {
+    e.preventDefault();
+    
+    const amountInput = document.getElementById('amount');
+    const maxAmount = parseFloat(amountInput.getAttribute('max') || 0);
+    const amount = parseFloat(amountInput.value || 0);
+    
+    // Validate amount
+    if (!amount || amount <= 0) {
+        alert('❌ Please enter a valid payment amount!');
+        amountInput.focus();
+        return;
+    }
+    
+    if (amount > maxAmount) {
+        alert(`❌ Payment amount cannot exceed ₹${maxAmount.toFixed(2)}`);
+        amountInput.focus();
+        return;
+    }
+    
+    // Submit the form if validation passes
+    e.target.submit();
 }
 
 // WhatsApp Message Functions
@@ -54,7 +93,7 @@ function generateWhatsAppMessage() {
     const customerPhone = dataStore.getAttribute('data-customer-phone') || '';
     const totalUdhar = parseFloat(dataStore.getAttribute('data-customer-purchased') || 0);
     const totalPaid = parseFloat(dataStore.getAttribute('data-total-paid') || 0);
-    const remainingBalance = parseFloat(dataStore.getAttribute('data-customer-udhar') || 0);
+    const remainingBalance = parseFloat(dataStore.getAttribute('data-customer-credit') || 0);
     const paymentStatus = dataStore.getAttribute('data-payment-status') || 'Due';
     const shopName = dataStore.getAttribute('data-shop-name') || 'My Shop';
     const shopPhone = dataStore.getAttribute('data-shop-phone') || '';
@@ -109,7 +148,11 @@ function sendWhatsAppMessage() {
     let message = document.getElementById('whatsappMessageContent').value;
 
     // Append the locked footer section
-    const footer = `\n\nThank You for Shopping!\nComputer Generated Bill\nPowered by SubhLabh - Shop Management Simplified`;
+    const footer = `
+
+Thank You for Shopping!
+Computer Generated Bill
+Powered by SubhLabh - Shop Management Simplified`;
     message += footer;
 
     // Format phone number (add country code if needed)
@@ -142,6 +185,7 @@ function sendWhatsAppMessage() {
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 Customer detail page loaded');
 
+    // Setup payment modal
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) {
         paymentModal.addEventListener('click', function (e) {
@@ -149,6 +193,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 closePaymentModal();
             }
         });
+        console.log('✅ Payment modal event listener attached');
+    } else {
+        console.warn('⚠️ Payment modal not found');
+    }
+    
+    // Ensure payment form has submit handler
+    const paymentForm = document.getElementById('paymentForm');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', handlePaymentSubmit);
+        console.log('✅ Payment form handler attached');
     }
 
     const whatsappModal = document.getElementById('whatsappModal');

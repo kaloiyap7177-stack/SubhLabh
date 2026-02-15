@@ -60,8 +60,8 @@ class DashboardView(View):
             month_sales = cached_metrics['month_sales']
             total_customers = cached_metrics['total_customers']
             total_products = cached_metrics['total_products']
-            total_udhar = cached_metrics['total_udhar']
-            today_udhar = cached_metrics['today_udhar']
+            total_credit = cached_metrics['total_credit']
+            today_credit = cached_metrics['today_credit']
         else:
             # Calculate metrics (expensive queries)
             today_sales = Sale.objects.filter(
@@ -77,15 +77,18 @@ class DashboardView(View):
             
             total_customers = Customer.objects.filter(user=user).count()
             total_products = Product.objects.filter(user=user).count()
-            total_udhar = Customer.objects.filter(user=user).aggregate(
-                total=Sum('udhar_amount')
-            )['total'] or Decimal('0')
             
-            today_udhar = Sale.objects.filter(
+            # Calculate pending credit from unpaid sales (using remaining amounts)
+            all_unpaid_sales = Sale.objects.filter(user=user, is_paid=False)
+            total_credit = sum(sale.remaining_amount for sale in all_unpaid_sales) or Decimal('0')
+            
+            # Calculate today's unpaid sales
+            today_unpaid_sales = Sale.objects.filter(
                 user=user, 
                 sale_date__range=(today_start, today_end),
-                added_to_udhar=True
-            ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+                is_paid=False
+            )
+            today_credit = sum(sale.remaining_amount for sale in today_unpaid_sales) or Decimal('0')
             
             # Cache for 5 minutes (300 seconds)
             cache.set(cache_key, {
@@ -93,8 +96,8 @@ class DashboardView(View):
                 'month_sales': month_sales,
                 'total_customers': total_customers,
                 'total_products': total_products,
-                'total_udhar': total_udhar,
-                'today_udhar': today_udhar,
+                'total_credit': total_credit,
+                'today_credit': today_credit,
             }, 300)
         
         # Get recent sales with proper timezone handling and optimized queries
@@ -166,8 +169,8 @@ class DashboardView(View):
             'monthly_sales': month_sales,
             'total_customers': total_customers,
             'total_products': total_products,
-            'total_udhar': total_udhar,
-            'today_udhar': today_udhar,
+            'total_credit': total_credit,
+            'today_credit': today_credit,
             'recent_sales': recent_sales,
             'top_products': top_products,
             'low_stock_products': low_stock_products,
@@ -467,6 +470,7 @@ class CustomerListView(View):
     """List all customers with search, filter, and pagination"""
     
     def get(self, request):
+        # Get all customers with last purchase date
         customers = Customer.objects.filter(user=request.user).annotate(
             last_purchase_date=Max('sales__sale_date')
         )
@@ -478,27 +482,36 @@ class CustomerListView(View):
                 Q(name__icontains=search) | Q(phone__icontains=search)
             )
         
-        # Filter by udhar status
-        udhar_filter = request.GET.get('udhar_filter', 'all')
-        if udhar_filter == 'remaining':
-            customers = customers.filter(udhar_amount__gt=0)
-        elif udhar_filter == 'cleared':
-            customers = customers.filter(udhar_amount=0)
-        
         # Order by latest activity
         customers = customers.order_by('-last_purchase_date', '-created_at')
+        
+        # Convert to list and calculate pending credit for each customer
+        customers_list = []
+        for customer in customers:
+            # Calculate pending credit from unpaid sales
+            unpaid_sales = customer.sales.filter(is_paid=False)
+            pending_credit = sum(sale.remaining_amount for sale in unpaid_sales) or Decimal('0')
+            customer.pending_credit = pending_credit
+            customers_list.append(customer)
+        
+        # Filter by credit status in Python
+        credit_filter = request.GET.get('credit_filter', 'all')
+        if credit_filter == 'remaining':
+            customers_list = [c for c in customers_list if c.pending_credit > 0]
+        elif credit_filter == 'cleared':
+            customers_list = [c for c in customers_list if c.pending_credit <= 0]
         
         # Pagination (10 per page)
         page = int(request.GET.get('page', 1))
         per_page = 10
-        total = customers.count()
+        total = len(customers_list)
         start = (page - 1) * per_page
-        customers = customers[start:start + per_page]
+        customers_page = customers_list[start:start + per_page]
         
         context = {
-            'customers': customers,
+            'customers': customers_page,
             'search': search,
-            'udhar_filter': udhar_filter,
+            'credit_filter': credit_filter,
             'total': total,
             'page': page,
             'pages': (total + per_page - 1) // per_page,
@@ -575,7 +588,7 @@ class CustomerCreateView(View):
 
 @method_decorator(login_required, name='dispatch')
 class CustomerDetailView(View):
-    """View customer details with purchase and udhar history"""
+    """View customer details with purchase and credit history"""
     
     def get(self, request, pk):
         customer = get_object_or_404(Customer, pk=pk, user=request.user)
@@ -585,12 +598,12 @@ class CustomerDetailView(View):
             customer=customer
         ).prefetch_related('items__product').order_by('-sale_date')
         
-        # Build udhar transaction history
-        udhar_transactions = []
+        # Build credit transaction history
+        credit_transactions = []
         
         # Add credit transactions (unpaid sales)
-        for sale in Sale.objects.filter(customer=customer, added_to_udhar=True).order_by('sale_date'):
-            udhar_transactions.append({
+        for sale in Sale.objects.filter(customer=customer, added_to_credit=True).order_by('sale_date'):
+            credit_transactions.append({
                 'date': sale.sale_date,
                 'type': 'credit',
                 'amount': sale.total_amount,
@@ -598,7 +611,7 @@ class CustomerDetailView(View):
             })
         
         # Sort by date (newest first)
-        udhar_transactions.sort(key=lambda x: x['date'], reverse=True)
+        credit_transactions.sort(key=lambda x: x['date'], reverse=True)
         
         # Self-heal stats: Recalculate totals from actual sales to ensure accuracy
         real_visits = purchases.count()
@@ -609,13 +622,17 @@ class CustomerDetailView(View):
             customer.total_purchased = real_purchased
             customer.save()
         
+        # Calculate pending credit from unpaid sales (remaining amounts)
+        unpaid_sales = purchases.filter(is_paid=False)
+        pending_credit = sum(sale.remaining_amount for sale in unpaid_sales) or Decimal('0')
+        
         # Calculate total paid amount from purchases
         total_paid = purchases.filter(is_paid=True).aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
         
-        # Determine payment status
-        if customer.udhar_amount == 0:
+        # Determine payment status based on actual unpaid sales
+        if pending_credit == 0:
             payment_status = 'Paid'
-        elif customer.udhar_amount < customer.total_purchased:
+        elif pending_credit < customer.total_purchased:
             payment_status = 'Partially Paid'
         else:
             payment_status = 'Due'
@@ -634,7 +651,8 @@ class CustomerDetailView(View):
         context = {
             'customer': customer,
             'purchases': purchases,
-            'udhar_transactions': udhar_transactions,
+            'credit_transactions': credit_transactions,
+            'pending_credit': pending_credit,
             'total_paid': total_paid,
             'payment_status': payment_status,
             'shop_name': shop_name,
@@ -688,8 +706,8 @@ class CustomerDeleteView(View):
 
 
 @method_decorator(login_required, name='dispatch')
-class UdharPaymentView(View):
-    """Record udhar payment"""
+class CreditPaymentView(View):
+    """Record credit payment"""
     
     def post(self, request, pk):
         customer = get_object_or_404(Customer, pk=pk, user=request.user)
@@ -701,13 +719,34 @@ class UdharPaymentView(View):
                 messages.error(request, 'Invalid payment amount!')
                 return redirect('customers:customer-detail', pk=pk)
             
-            if amount > customer.udhar_amount:
-                messages.error(request, 'Payment amount exceeds outstanding udhar!')
+            # Calculate total pending credit from unpaid sales (remaining amounts)
+            unpaid_sales = customer.sales.filter(is_paid=False).order_by('sale_date')
+            pending_credit = sum(sale.remaining_amount for sale in unpaid_sales) or Decimal('0')
+            
+            if amount > pending_credit:
+                messages.error(request, 'Payment amount exceeds outstanding credit!')
                 return redirect('customers:customer-detail', pk=pk)
             
-            # Reduce udhar amount
-            customer.udhar_amount -= amount
-            customer.save()
+            # Apply payment to unpaid sales (FIFO - oldest first)
+            remaining_payment = amount
+            
+            for sale in unpaid_sales:
+                if remaining_payment <= 0:
+                    break
+                
+                sale_remaining = sale.remaining_amount
+                
+                if remaining_payment >= sale_remaining:
+                    # Pay off this entire sale
+                    sale.amount_paid = sale.total_amount
+                    sale.is_paid = True
+                    remaining_payment -= sale_remaining
+                else:
+                    # Partial payment to this sale
+                    sale.amount_paid += remaining_payment
+                    remaining_payment = 0
+                
+                sale.save()
             
             # Invalidate dashboard cache
             try:
@@ -717,9 +756,10 @@ class UdharPaymentView(View):
             except Exception as e:
                 pass
                 
-            messages.success(request, f'Payment of ₹{amount} recorded successfully!')
+            messages.success(request, f'✅ Payment of ₹{amount:.2f} recorded successfully!')
         except Exception as e:
-            messages.error(request, f'Error recording payment: {str(e)}')
+            logger.error(f"Error recording payment for customer {pk}: {str(e)}", exc_info=True)
+            messages.error(request, f'❌ Error recording payment: {str(e)}')
         
         return redirect('customers:customer-detail', pk=pk)
 
@@ -1008,7 +1048,7 @@ class BillingView(View):
             'id': c.id,
             'name': c.name,
             'phone': c.phone,
-            'udhar_amount': str(c.udhar_amount),
+            'credit_amount': str(c.credit_amount),
         } for c in customers]
         
         # Cache active offers for 10 minutes (rarely change during user session)
@@ -1132,7 +1172,7 @@ class BillingView(View):
                 discount_amount=discount_amount,
                 payment_method=payment_method,
                 is_paid=is_paid,
-                added_to_udhar=not is_paid,
+                added_to_credit=not is_paid,
                 notes=notes
             )
             
@@ -1169,7 +1209,7 @@ class BillingView(View):
                 customer.total_visits += 1
                 
                 if not is_paid:
-                    customer.udhar_amount += total_amount
+                    customer.credit_amount += total_amount
                 
                 customer.save()
             
@@ -1243,7 +1283,7 @@ class SalesHistoryView(View):
         
         # Payment method filter
         if payment_method:
-            if payment_method == 'udhar':
+            if payment_method == 'credit':
                 sales = sales.filter(is_paid=False)
             else:
                 sales = sales.filter(payment_method=payment_method, is_paid=True)
@@ -1329,7 +1369,7 @@ class SalesHistoryView(View):
                 pass
         
         if payment_method:
-            if payment_method == 'udhar':
+            if payment_method == 'credit':
                 sales = sales.filter(is_paid=False)
             else:
                 sales = sales.filter(payment_method=payment_method, is_paid=True)
@@ -1547,10 +1587,19 @@ class SaleDeleteView(View):
             if sale.customer:
                 customer = sale.customer
                 customer.total_purchased -= sale.total_amount
+                # Ensure total purchased doesn't go below zero
+                if customer.total_purchased < 0:
+                    customer.total_purchased = 0
                 customer.total_visits -= 1
+                # Ensure total visits doesn't go below zero
+                if customer.total_visits < 0:
+                    customer.total_visits = 0
                 
                 if not sale.is_paid:
-                    customer.udhar_amount -= sale.total_amount
+                    customer.credit_amount -= sale.total_amount
+                    # Ensure credit amount doesn't go below zero
+                    if customer.credit_amount < 0:
+                        customer.credit_amount = 0
                 
                 customer.save()
             
@@ -2016,7 +2065,7 @@ class CustomerSearchAPI(View):
             'id': c.id,
             'name': c.name,
             'phone': c.phone,
-            'udhar': str(c.udhar_amount),
+            'credit': str(c.credit_amount),
             'total_purchased': str(c.total_purchased),
         } for c in customers]
         

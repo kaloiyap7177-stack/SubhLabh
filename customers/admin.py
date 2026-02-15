@@ -60,8 +60,8 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 # @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone', 'udhar_amount', 'total_purchased', 'created_at')
-    list_filter = ('created_at', 'udhar_amount')
+    list_display = ('name', 'phone', 'credit_amount', 'total_purchased', 'created_at')
+    list_filter = ('created_at', 'credit_amount')
     search_fields = ('name', 'phone', 'address')
     readonly_fields = ('created_at', 'updated_at')
 

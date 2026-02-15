@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db.models import Sum, Count, Q, F
 from datetime import timedelta
+from decimal import Decimal
 import random
 import string
 import os
@@ -181,7 +182,7 @@ class Customer(models.Model):
     phone = models.CharField(max_length=20)
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
-    udhar_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    credit_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_purchased = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_visits = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -277,7 +278,7 @@ class Sale(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     is_paid = models.BooleanField(default=True)
-    added_to_udhar = models.BooleanField(default=False)
+    added_to_credit = models.BooleanField(default=False)
     sale_date = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -285,6 +286,7 @@ class Sale(models.Model):
     
     # Offer fields
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     class Meta:
         ordering = ['-sale_date']
@@ -295,6 +297,16 @@ class Sale(models.Model):
     def __str__(self):
         customer_name = self.customer.name if self.customer else 'Walk-in'
         return f"{customer_name} - Rs. {self.total_amount} ({self.sale_date.date()})"
+    
+    @property
+    def remaining_amount(self):
+        """Calculate remaining amount to be paid"""
+        return max(Decimal('0'), self.total_amount - self.amount_paid)
+    
+    @property
+    def is_fully_paid(self):
+        """Check if sale is fully paid"""
+        return self.remaining_amount <= 0
 
 
 class SaleItem(models.Model):

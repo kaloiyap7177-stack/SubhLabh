@@ -140,10 +140,10 @@ class CoreFlowsTest(TestCase):
         self.assertFalse(resp_json['success'])
         self.assertIn('Insufficient stock', resp_json['message'])
 
-    def test_udhar_transaction(self):
-        """Test credit (Udhar) sale logic"""
+    def test_credit_transaction(self):
+        """Test credit sale logic"""
         
-        initial_udhar = self.customer.udhar_amount
+        initial_credit = self.customer.credit_amount
         
         data = {
             'customer_id': self.customer.id,
@@ -163,13 +163,13 @@ class CoreFlowsTest(TestCase):
         
         # Verify Customer Udhar Increased
         self.customer.refresh_from_db()
-        self.assertEqual(self.customer.udhar_amount, initial_udhar + Decimal("100.00"))
+        self.assertEqual(self.customer.credit_amount, initial_credit + Decimal("100.00"))
         
         # Verify Sale marked as not paid
         sale_id = response.json()['sale_id']
         sale = Sale.objects.get(pk=sale_id)
         self.assertFalse(sale.is_paid)
-        self.assertTrue(sale.added_to_udhar)
+        self.assertTrue(sale.added_to_credit)
 
     def test_report_aggregations(self):
         """Test if reports are calculating totals correctly"""

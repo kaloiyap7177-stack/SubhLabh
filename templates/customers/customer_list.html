@@ -27,10 +27,10 @@
     </form>
 
     <form method="GET" class="filter-form">
-        <select name="udhar_filter" class="filter-select" onchange="this.form.submit()">
-            <option value="all" {% if udhar_filter == 'all' %}selected{% endif %}>All Customers</option>
-            <option value="remaining" {% if udhar_filter == 'remaining' %}selected{% endif %}>Has Udhar</option>
-            <option value="cleared" {% if udhar_filter == 'cleared' %}selected{% endif %}>Cleared</option>
+        <select name="credit_filter" class="filter-select" onchange="this.form.submit()">
+            <option value="all" {% if credit_filter == 'all' %}selected{% endif %}>All Customers</option>
+            <option value="remaining" {% if credit_filter == 'remaining' %}selected{% endif %}>Has Credit</option>
+            <option value="cleared" {% if credit_filter == 'cleared' %}selected{% endif %}>Cleared</option>
         </select>
     </form>
 </div>
@@ -44,7 +44,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Phone Number</th>
-                    <th>Total Udhar</th>
+                    <th>Total Credit</th>
                     <th>Last Purchase</th>
                     <th class="actions-col">Actions</th>
                 </tr>
@@ -62,8 +62,8 @@
                         <span class="phone-number">📞 {{ customer.phone }}</span>
                     </td>
                     <td>
-                        {% if customer.udhar_amount > 0 %}
-                        <span class="udhar-badge has-udhar">₹{{ customer.udhar_amount|floatformat:2 }}</span>
+                        {% if customer.pending_credit > 0 %}
+                        <span class="udhar-badge has-udhar">₹{{ customer.pending_credit|floatformat:2 }}</span>
                         {% else %}
                         <span class="udhar-badge cleared">₹0.00</span>
                         {% endif %}

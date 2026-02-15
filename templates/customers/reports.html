@@ -53,17 +53,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">📦</div>
-            <div class="stat-info">
-                <span class="stat-label">Total Products Sold</span>
-                <span class="stat-value">{% if product_sales %}{{ product_sales.0.total_quantity }}{% else %}0{% endif %}
-                   
-                </span>
-                <span class="stat-trend trend-up">Top Product</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">👥</div>
+            <div class="stat-icon"></div>
             <div class="stat-info">
                 <span class="stat-label">Active Customers</span>
                 <span class="stat-value">{% if customer_purchases %}{{ customer_purchases|length }}{% else %}0{% endif %}

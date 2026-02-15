@@ -26,7 +26,7 @@
 
 <!-- Hidden Data Store for WhatsApp -->
 <div id="whatsapp-data-store" style="display: none;" data-customer-name="{{ customer.name }}"
-    data-customer-phone="{{ customer.phone }}" data-customer-udhar="{{ customer.udhar_amount }}"
+    data-customer-phone="{{ customer.phone }}" data-customer-credit="{{ pending_credit }}"
     data-customer-purchased="{{ customer.total_purchased }}" data-total-paid="{{ total_paid }}"
     data-payment-status="{{ payment_status }}" data-shop-name="{{ shop_name }}" data-shop-phone="{{ shop_phone }}"
     data-shop-address="{{ shop_address }}">
@@ -35,10 +35,10 @@
 <!-- Stats Cards -->
 <div class="stats-row">
     <div class="stat-box">
-        <div class="stat-icon udhar">💳</div>
+        <div class="stat-icon credit">💳</div>
         <div class="stat-details">
-            <p class="stat-label">Total Udhar</p>
-            <h2 class="stat-value">₹{{ customer.udhar_amount|floatformat:2 }}</h2>
+            <p class="stat-label">Total Credit</p>
+            <h2 class="stat-value">₹{{ pending_credit|floatformat:2 }}</h2>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
                             {% if sale.is_paid %}
                             <span class="status-badge paid">Paid</span>
                             {% else %}
-                            <span class="status-badge udhar">Udhar</span>
+                            <span class="status-badge credit">Credit</span>
                             {% endif %}
                         </div>
                     </div>
@@ -104,39 +104,39 @@
         </div>
     </div>
 
-    <!-- Udhar Management -->
+    <!-- Credit Management -->
     <div class="sidebar-section">
-        <!-- Udhar Summary -->
-        <div class="section-card udhar-card">
+        <!-- Credit Summary -->
+        <div class="section-card credit-card">
             <div class="section-header">
-                <h3>💵 Udhar Summary</h3>
+                <h3>💵 Credit Summary</h3>
             </div>
             <div class="section-content">
-                <div class="udhar-summary">
+                <div class="credit-summary">
                     <div class="summary-row">
                         <span>Outstanding:</span>
-                        <strong class="amount-red">₹{{ customer.udhar_amount|floatformat:2 }}</strong>
+                        <strong class="amount-red">₹{{ pending_credit|default:"0"|floatformat:2 }}</strong>
                     </div>
                 </div>
 
-                {% if customer.udhar_amount > 0 %}
-                <button onclick="showPaymentModal()" class="btn-pay-udhar">
+                {% if pending_credit and pending_credit > 0 %}
+                <button onclick="showPaymentModal()" class="btn-pay-credit" type="button">
                     💰 Add Payment
                 </button>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Udhar History -->
+        <!-- Credit History -->
         <div class="section-card">
             <div class="section-header">
-                <h3>📄 Udhar History</h3>
+                <h3>📄 Credit History</h3>
             </div>
             <div class="section-content">
-                {% if udhar_transactions %}
-                <div class="udhar-history">
-                    {% for transaction in udhar_transactions %}
-                    <div class="udhar-transaction">
+                {% if credit_transactions %}
+                <div class="credit-history">
+                    {% for transaction in credit_transactions %}
+                    <div class="credit-transaction">
                         <div class="transaction-date">
                             {{ transaction.date|date:"M d, Y" }}
                         </div>
@@ -151,8 +151,8 @@
                             </span>
                             <strong
                                 class="{% if transaction.type == 'credit' %}amount-red{% else %}amount-green{% endif %}">
-                                {% if transaction.type == 'credit' %}+{% else %}-{% endif %}₹{{
-                                transaction.amount|floatformat:2 }}
+                                {% if transaction.type == 'credit' %}+{% else %}-{% endif %}₹{{ transaction.amount|floatformat:2 }}
+                                
                             </strong>
                         </div>
                     </div>
@@ -160,7 +160,7 @@
                 </div>
                 {% else %}
                 <div class="empty-message">
-                    <p>No udhar history</p>
+                    <p>No credit history</p>
                 </div>
                 {% endif %}
             </div>
@@ -183,19 +183,26 @@
 <!-- Payment Modal -->
 <div id="paymentModal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h3>💰 Add Udhar Payment</h3>
-        <form method="POST" action="{% url 'customers:udhar-payment' customer.id %}">
+        <h3>💰 Add Payment</h3>
+        <form id="paymentForm" method="POST" action="{% url 'customers:credit-payment' customer.id %}" onsubmit="handlePaymentSubmit(event)">
             {% csrf_token %}
             <div class="form-group">
-                <label>Customer: <strong>{{ customer.name }}</strong></label>
-                <label>Outstanding Udhar: <strong class="amount-red">₹{{ customer.udhar_amount|floatformat:2 }}
-                    </strong></label>
+                <label>Customer Name:</label>
+                <p style="margin: 0; font-weight: 600; color: var(--primary);">{{ customer.name }}</p>
             </div>
+            
             <div class="form-group">
-                <label for="amount">Payment Amount (₹)</label>
-                <input type="number" id="amount" name="amount" class="form-input" step="0.01"
-                    max="{{ customer.udhar_amount }}" placeholder="Enter amount" required>
+                <label>Outstanding Amount:</label>
+                <p style="margin: 0; font-weight: 700; color: #ef4444; font-size: 20px;">₹{{ pending_credit|default:"0"|floatformat:2 }}</p>
             </div>
+            
+            <div class="form-group">
+                <label for="amount">Payment Amount (₹) *</label>
+                <input type="number" id="amount" name="amount" class="form-input" 
+                    step="0.01" min="0" max="{{ pending_credit|default:"0" }}" 
+                    placeholder="Enter payment amount" required>
+            </div>
+            
             <div class="modal-actions">
                 <button type="button" onclick="closePaymentModal()" class="btn-cancel">Cancel</button>
                 <button type="submit" class="btn-submit">💾 Record Payment</button>

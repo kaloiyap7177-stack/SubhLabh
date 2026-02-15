@@ -55,25 +55,25 @@ class CustomerModuleTest(TestCase):
         self.assertTrue(any("already exists" in str(m) for m in messages))
         self.assertEqual(Customer.objects.count(), 1)
 
-    def test_udhar_payment_validation(self):
-        """Test validation for udhar payments"""
+    def test_credit_payment_validation(self):
+        """Test validation for credit payments"""
         customer = Customer.objects.create(
             user=self.user, 
             name="Debtor", 
             phone="999",
-            udhar_amount=Decimal("500.00")
+            credit_amount=Decimal("500.00")
         )
-        url = f'/customers/{customer.id}/pay-udhar/'
+        url = f'/customers/{customer.id}/pay-credit/'
         
         # 1. Try paying negative amount
         self.client.post(url, {'amount': '-50'})
         customer.refresh_from_db()
-        self.assertEqual(customer.udhar_amount, Decimal("500.00"))
+        self.assertEqual(customer.credit_amount, Decimal("500.00"))
         
         # 2. Try paying more than outstanding
         self.client.post(url, {'amount': '600'})
         customer.refresh_from_db()
-        self.assertEqual(customer.udhar_amount, Decimal("500.00"))
+        self.assertEqual(customer.credit_amount, Decimal("500.00"))
         
         # 3. Pay partial valid amount
         self.client.post(url, {'amount': '200'})

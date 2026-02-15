@@ -44,11 +44,11 @@ function searchCustomers() {
             <span class="customer-result-name">🚶 Walk-in Customer (No Credit)</span>
         </div>
     ` + filtered.map(c => `
-        <div class="customer-result-item" onclick='selectCustomer(${c.id}, "${c.name.replace(/"/g, '&quot;')}", "${c.phone}", ${c.udhar_amount})'>
+        <div class="customer-result-item" onclick='selectCustomer(${c.id}, "${c.name.replace(/"/g, '&quot;')}", "${c.phone}", ${c.credit_amount})'>
             <span class="customer-result-name">${c.name}</span>
             <span class="customer-result-details">
                 📞 ${c.phone}
-                ${parseFloat(c.udhar_amount) > 0 ? ` | <span class="customer-result-udhar">Udhar: ₹${parseFloat(c.udhar_amount).toFixed(2)}</span>` : ''}
+                ${parseFloat(c.credit_amount) > 0 ? ` | <span class="customer-result-credit">Credit: ₹${parseFloat(c.credit_amount).toFixed(2)}</span>` : ''}
             </span>
         </div>
     `).join('');
@@ -71,8 +71,8 @@ function showCustomerResults() {
     document.getElementById('customerResults').classList.add('show');
 }
 
-function selectCustomer(id, name, phone = '', udhar = 0) {
-    selectedCustomer = id ? { id, name, phone, udhar } : null;
+function selectCustomer(id, name, phone = '', credit = 0) {
+    selectedCustomer = id ? { id, name, phone, credit } : null;
     document.getElementById('selectedCustomerId').value = id || '';
     document.getElementById('customerSearchInput').value = name;
     document.getElementById('customerResults').classList.remove('show');
@@ -81,7 +81,7 @@ function selectCustomer(id, name, phone = '', udhar = 0) {
     if (id) {
         document.getElementById('customerName').textContent = name;
         document.getElementById('customerPhone').textContent = phone;
-        document.getElementById('customerUdhar').textContent = '₹' + parseFloat(udhar).toFixed(2);
+        document.getElementById('customerCredit').textContent = '₹' + parseFloat(credit).toFixed(2);
         info.style.display = 'block';
     } else {
         info.style.display = 'none';
@@ -414,8 +414,8 @@ function updatePaymentStatus() {
     const method = document.getElementById('paymentMethod').value;
     const statusDiv = document.getElementById('paymentStatus');
 
-    if (method === 'udhar') {
-        statusDiv.innerHTML = '<span class="status-badge udhar">Credit / Udhar</span>';
+    if (method === 'credit') {
+        statusDiv.innerHTML = '<span class="status-badge credit">Credit</span>';
 
         // Check if customer is selected
         const customerId = document.getElementById('selectedCustomerId').value;
@@ -457,12 +457,12 @@ async function saveSale() {
     const customerId = document.getElementById('selectedCustomerId').value;
     const paymentMethod = document.getElementById('paymentMethod').value;
 
-    if (paymentMethod === 'udhar' && !customerId) {
+    if (paymentMethod === 'credit' && !customerId) {
         showNotification('Please select a customer for credit sales!', 'error');
         return;
     }
 
-    const isPaid = paymentMethod !== 'udhar';
+    const isPaid = paymentMethod !== 'credit';
     const notes = document.getElementById('saleNotes').value;
 
     const saleData = {
@@ -672,11 +672,11 @@ function sendWhatsAppBill() {
         const paymentMethod = document.getElementById('paymentMethod') ? document.getElementById('paymentMethod').value : 'cash';
         const paymentMethodDisplay = paymentMethod === 'cash' ? 'Cash' :
                                    paymentMethod === 'upi' ? 'UPI/PhonePe/GPay' :
-                                   paymentMethod === 'card' ? 'Card' : 'Udhar/Credit';
+                                   paymentMethod === 'card' ? 'Card' : 'Credit'
         message += `*Payment:* ${paymentMethodDisplay}\n`;
 
-        if (paymentMethod === 'udhar') {
-            message += `*Status:* Udhar/Pending\n`;
+        if (paymentMethod === 'credit') {
+            message += `*Status:* Credit/Pending\n`;
         } else {
             message += `*Status:* Paid\n`;
         }
@@ -780,7 +780,7 @@ async function saveNewCustomer(event) {
                 id: data.customer_id,
                 name: document.getElementById('newCustomerName').value,
                 phone: document.getElementById('newCustomerPhone').value,
-                udhar_amount: "0.00"
+                credit_amount: "0.00"
             };
             customers.push(newCustomer);
 
@@ -908,7 +908,7 @@ async function saveInlineCustomer() {
                     id: data.customer_id,
                     name: name,
                     phone: phone,
-                    udhar_amount: "0.00"
+                    credit_amount: "0.00"
                 };
                 customers.push(newCustomer);
 

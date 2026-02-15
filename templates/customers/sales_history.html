@@ -44,7 +44,7 @@
                 <option value="cash" {% if payment_method == 'cash' %}selected{% endif %}>Cash</option>
                 <option value="upi" {% if payment_method == 'upi' %}selected{% endif %}>UPI</option>
                 <option value="card" {% if payment_method == 'card' %}selected{% endif %}>Card</option>
-                <option value="udhar" {% if payment_method == 'udhar' %}selected{% endif %}>Udhar/Credit</option>
+                <option value="credit" {% if payment_method == 'credit' %}selected{% endif %}>Credit</option>
             </select>
         </div>
 
@@ -117,7 +117,7 @@
                             {% if sale.payment_method == 'cash' %}💵 Cash
                             {% elif sale.payment_method == 'upi' %}📱 UPI
                             {% elif sale.payment_method == 'card' %}💳 Card
-                            {% else %}💳 Udhar
+                            {% else %}💳 Credit
                             {% endif %}
                         </span>
                     </td>
@@ -131,7 +131,7 @@
                         {% if sale.is_paid %}
                         <span class="status-badge paid">✅ Paid</span>
                         {% else %}
-                        <span class="status-badge pending">⏳ Udhar Pending</span>
+                        <span class="status-badge pending">⏳ Credit Pending</span>
                         {% endif %}
                     </td>
                     <td>
@@ -167,7 +167,7 @@
                     {% if sale.payment_method == 'cash' %}💵 Cash
                     {% elif sale.payment_method == 'upi' %}📱 UPI
                     {% elif sale.payment_method == 'card' %}💳 Card
-                    {% else %}💳 Udhar
+                    {% else %}💳 Credit
                     {% endif %}
                 </span>
             </div>

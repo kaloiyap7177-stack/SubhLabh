@@ -695,7 +695,7 @@ from .app_views import (
     UpdateNotificationsView, DeleteAccountConfirmView, RequestAccountDeletionView, CancelAccountDeletionView,
     BrandingView,
     CustomerListView, CustomerCreateView, CustomerDetailView, CustomerEditView, CustomerDeleteView,
-    UdharPaymentView,
+    CreditPaymentView,
     ProductListView, ProductCreateView, ProductDetailView, ProductDataView, ProductEditView, ProductDeleteView,
     ProductImportView, ProductExportView, ProductTemplateView,
     BillingView, SalesHistoryView, SaleDetailView, SaleDeleteView, SalePrintView,
