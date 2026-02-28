@@ -1695,14 +1695,14 @@ class ReportsView(View):
         
         # Get available years for dropdown
         years_data = Sale.objects.filter(user=user).extra(
-            select={'year': "DATE_FORMAT(sale_date, '%%Y')"}
+            select={'year': "strftime('%%Y', sale_date)"}
         ).values('year').distinct().order_by('-year')
         
         years = [item['year'] for item in years_data if item['year']]
         
         # 1. Monthly Sales Report
         monthly_sales_data = sales.extra(
-            select={'month': "DATE_FORMAT(sale_date, '%%Y-%%m')"}
+            select={'month': "strftime('%%Y-%%m', sale_date)"}
         ).values('month').annotate(
             total_revenue=Sum('total_amount')
         ).order_by('month')
@@ -1726,7 +1726,7 @@ class ReportsView(View):
         
         # 2. Yearly Sales Report
         yearly_sales_data = sales.extra(
-            select={'year': "DATE_FORMAT(sale_date, '%%Y')"}
+            select={'year': "strftime('%%Y', sale_date)"}
         ).values('year').annotate(
             total_revenue=Sum('total_amount')
         ).order_by('year')
@@ -1874,7 +1874,7 @@ class ReportsView(View):
         if report_type in ['monthly-sales', 'monthly']:
             # Monthly Sales Report
             monthly_sales_data = sales.extra(
-                select={'month': "DATE_FORMAT(sale_date, '%%Y-%%m')"}
+                select={'month': "strftime('%%Y-%%m', sale_date)"}
             ).values('month').annotate(
                 total_revenue=Sum('total_amount')
             ).order_by('month')
@@ -1892,7 +1892,7 @@ class ReportsView(View):
         elif report_type in ['yearly-sales', 'yearly']:
             # Yearly Sales Report
             yearly_sales_data = sales.extra(
-                select={'year': "DATE_FORMAT(sale_date, '%%Y')"}
+                select={'year': "strftime('%%Y', sale_date)"}
             ).values('year').annotate(
                 total_revenue=Sum('total_amount')
             ).order_by('year')
